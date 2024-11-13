@@ -9,6 +9,19 @@
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
     {% block head_stuff %} 
     <!--navigation bar-->
+    <h1> Roomie-Match</h1>
+    <div id="logo">
+        <img src="" alt="ourLogo"> 
+    </div>
+    <div class="navbar">
+        <a href="{{ url_for() }}"> Home </a>
+        <a href="{{ url_for() }}"> Message </a>
+        <a href="{{ url_for() }}"> Profile </a>
+        <a href="{{ url_for() }}"> FAQs </a>
+
+
+    </div>
+
     
     {% endblock %}
 </head>
@@ -21,12 +34,13 @@
 
             
 {% block main_content %}
-<h1> Roomie-Match</h1>
+
 {% endblock %}
 
 
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   {% block end_scripts %}
+
   {% endblock %}
   
 </body>
