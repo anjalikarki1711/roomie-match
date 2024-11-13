@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <!-- for mobile-friendly pages -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name=Flora Mukako content="base-template">
+    <title>{{ page_title }}</title>
+    <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
+    {% block head_stuff %} 
+    <!--navigation bar-->
+    
+    {% endblock %}
+</head>
+<body>
+    {% block nav %}
+<nav>
+  
+</nav>
+{% endblock %}
+
+            
+{% block main_content %}
+<h1> Roomie-Match</h1>
+{% endblock %}
+
+
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  {% block end_scripts %}
+  {% endblock %}
+  
+</body>
+</html>
