@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{# replaces default content block #}
+{% block content %}
+
+<form id="login-form"
+      method="post"
+      action="/sign-up">
+
+<p><label>Name:
+    <input required type="text" name="user-name" size="50"></label></p>
+
+<p><label>Password:
+    <input required name="text" name="password1" size="50"></textarea>
+</label></p>
+
+<p><label>Re-type Password:
+    <input required name="text" name="password2" size="50"></textarea>
+</label></p>
+
+
+<p><input type="submit" value="Login">
+
+</form>
+
+{% endblock %}
