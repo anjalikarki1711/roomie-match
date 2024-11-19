@@ -1,5 +1,6 @@
 <!--Roomie Match Project by Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga-->
 <!--Base template for final project. Sets up nav bar at the top with options of Home, Profile, Posts, and Chat-->
+{% block head_stuff %}
 <!doctype html>
 <html lang='en'>
 <head>
@@ -8,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
-    {% block head_stuff %} {% endblock %}
+     {% endblock %}
 </head>
 <body>
 
@@ -35,12 +36,12 @@
 {% endblock %}
 
 {% block main_content %}
-<h1>Welcome!</h1>
+<h1>Roomie-match</h1>
 {% endblock %}
 
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-  {% block end_scripts %}
-  {% endblock %}
   
 </body>
+{% block end_scripts %}
+{% endblock %}
 </html>

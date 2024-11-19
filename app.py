@@ -47,6 +47,11 @@ def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
 
+@app.route('/newPost/', method= ["GET", "POST"])
+def insert():
+    
+    
+
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:

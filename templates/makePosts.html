@@ -1,1 +1,55 @@
 {% extends "base.html" %}
+
+{% block main_content %}
+<h1>Make a new post</h1>
+<div class="newPostForm">
+
+  <form method="POST" action="">
+    <p><label for="post_type"> What are you looking for: 
+    </label> <select id="post_type" name ="post_type" required>
+        <option value="">select</option>
+        <option value="roommates">roomates(Looking for roommates to join your housing)</option>
+        <option value="housing">housing</option>
+    <p><label for="housing_type"> Housing type: 
+    </label> <select id="housing_type" name ="housing_type" required>
+        <option value="">select</option>
+        <option value="long-term-post-grad">Longterm Post-grad</option>
+        <option value="summer">Summer</option>
+        <option value="winter">Winter</option>
+        <option value="short-term">Short-term</option>
+
+        <p><label for="city"> City:
+                <input required type="text" name="city" id= "city"> </label> </p>
+        <p><label for="state"> State:
+                <input required type="text" name="state" id= "state"> </label> </p>
+        <p><label for="budget"> What's your budget?
+            <input required type="budget" name="budget" id= "budget"> </label> </p>
+        <p><label for="max_roomates"> Maximum Number of Roommates:
+            <input required type="max_roomates" name="max_roomates" id= "max_roomates"> </label> </p>
+        <label for="">Give a brief description of what you are looking for: <br>
+            <textarea id= "whySpot" name="WhySpot: " rows="3" cols="30" required></textarea>
+            </label>
+            <br>
+        <p><label for="shared_bathroom"> Shared Bathroom: 
+        </label> <select id="shared_bathroom" name ="shared_bathroom" required>
+            <option value="">select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select></p>
+        <p><label for="shared_bedroom"> Shared bedroom: 
+        </label> <select id="shared_bedroom" name ="shared_bathroom" required>
+            <option value="">select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select></p>
+        <p><label for="ok_with_pets"> Is this a pets-friendly space: 
+        </label> <select id="ok_with_pets" name ="ok_with_pets" required>
+            <option value="">select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select></p>
+        <p><input type="submit" id="submit" value="Submit"> </p>
+    
+
+</form>
+{% endblock %}
