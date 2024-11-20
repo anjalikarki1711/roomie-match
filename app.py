@@ -11,6 +11,7 @@ app = Flask(__name__)
 from werkzeug.utils import secure_filename
 import secrets
 import imghdr
+
 import cs304dbi as dbi
 
 
@@ -74,23 +75,20 @@ def insert_new_post():
     pets = request.form.get('ok_with_pets')
     description = request.form.get("descr")
     return render_template('successfulPost.html')
-
-@app.route('/upload/', methods=["GET", "POST"])
-def file_upload():
-    f = request.files['pic']
-    user_filename = f.filename
-    ext = user_filename.split('.')[-1]
-    filename = secure_filename('{}.{}'.format(nm,ext))
-    pathname = os.path.join(app.config['UPLOADS'],filename)
-    f.save(pathname)
-    conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
-    curs.execute(
-        '''insert into picfile(nm,filename) values (%s,%s)
-            on duplicate key update filename = %s''',
-        [filename, filename])
-    conn.commit()
-    flash('Upload successful')
+    # f = request.files['pic']
+    # user_filename = f.filename
+    # ext = user_filename.split('.')[-1]
+    # filename = secure_filename('{}.{}'.format(ext))
+    # pathname = os.path.join(app.config['UPLOADS'],filename)
+    # f.save(pathname)
+    # conn = dbi.connect()
+    # curs = dbi.dict_cursor(conn)
+    # curs.execute(
+    #     '''insert into picfile(nm,filename) values (%s,%s)
+    #         on duplicate key update filename = %s''',
+    #     [filename, filename])
+    # conn.commit()
+    # flash('Upload successful')
 
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
@@ -134,10 +132,6 @@ def viewChat():
 #                            page_title='Chat History')
 
 
-@app.route('/processPost/', methods=["POST"])
-def processPost():
-    conn = dbi.connect()    
-    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     import sys, os
