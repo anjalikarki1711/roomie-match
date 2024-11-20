@@ -89,6 +89,46 @@ def join():
         session['visits'] = 1
         return redirect( url_for('viewProfile' ) ) #, username=username) )
 
+@app.route('/login/', methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        return render_template ("login.html", page_title="Log In")
+    
+    else: 
+        username = request.form.get('username')
+        passwd = request.form.get('password')
+        conn = dbi.connect()
+        curs = dbi.dict_cursor(conn)
+        curs.execute('''SELECT user_id,user_name,hashed_password
+                        FROM login
+                        WHERE user_name = %s''',
+                    [username])
+        row = curs.fetchone()
+        if row is None:
+            # Same response as wrong password,
+            # so no information about what went wrong
+            flash('login incorrect. Try again or join')
+            return redirect( url_for('login'))
+        stored = row['hashed_password']
+        print('database has stored: {} {}'.format(stored,type(stored)))
+        print('form supplied passwd: {} {}'.format(passwd,type(passwd)))
+        hashed2 = bcrypt.hashpw(passwd.encode('utf-8'),
+                                stored.encode('utf-8'))
+        hashed2_str = hashed2.decode('utf-8')
+        print('rehash is: {} {}'.format(hashed2_str,type(hashed2_str)))
+        if hashed2_str == stored:
+            print('they match!')
+            flash('successfully logged in as '+username)
+            session['username'] = username
+            session['user_id'] = row['user_id']
+            session['logged_in'] = True
+            session['visits'] = 1
+            return redirect( url_for('viewProfile' ) ) #, username=username) )
+        else:
+            flash('password incorrect. Try again or join')
+            return redirect( url_for('join'))
+        
+
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:
