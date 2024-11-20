@@ -128,6 +128,19 @@ def login():
             flash('password incorrect. Try again or join')
             return redirect( url_for('join'))
         
+@app.route('/logout/')
+def logout():
+    if 'username' in session:
+        username = session['username']
+        session.pop('username')
+        session.pop('user_id')
+        session.pop('logged_in')
+        flash('You are logged out')
+        return redirect(url_for('index'))
+    else:
+        flash('you are not logged in. Please login or join')
+        return redirect( url_for('index') )
+    
 
 if __name__ == '__main__':
     import sys, os
