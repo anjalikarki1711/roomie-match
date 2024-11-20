@@ -20,12 +20,10 @@ HTML {
 h1 {
     font-size: 200%;
     color: var(--color-header);
-    padding: 10px;
 }
 
 h2, h3 {
     color: var(--color-header);
-    padding: 10px;
 }
     
 
@@ -66,53 +64,11 @@ nav button, nav a {
 /* Only the top-level buttons are centered; lower ones are left-aligned. */
 nav > ul > li > button , nav > ul > li > a {
     text-align: center;
-    color: white;
+    padding: 14px 16px;
+    color: ;
 }
 
-/* because of the margin trick, this can only be used for the last element */
-
-nav li.right {
-    margin-left: auto;
+.logo{
+    align-items: left;
+    
 }
-
-nav button:hover, button:focus, nav a:hover, nav a:focus {
-    background-color: var(--color-focus);
-}
-
-.dropdown{
-        background-color: white;
-        padding:0.9em;
-        color: black;
-        visibility: visible;
-}
-.loginButtons{
-    display: inline-block;
-    padding: 5px 20px;
-    font-size: 18px;
-    background-color: #007ea9;
-    border: 2px solid #000;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-}
-.loginButtons a{
-    color: white
-}
-
-.loginSignup{
-    display: inline-flex;
-    align-items: center;
-}
-.login{
-    padding: 20px;
-}
-#loginButton, #signupButton{
-    margin-left: 30px;
-}
-
-.form{
-    padding: 5px;
-    margin-left: 30px;
-}
-
