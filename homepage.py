@@ -21,22 +21,27 @@ app.secret_key = secrets.token_hex()
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
 
-# getpostdetails()
-#getuserdetails()
-#getfilters()
+#helper functions
+def getPostDetails(conn):
+    '''gets post details from the database'''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    posts = curs.execute('''select user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
+            budget, housing_type, post_type from post ''')
+    return curs.fetchall()
 
-if __name__ == '__main__':
-    import sys, os
-    if len(sys.argv) > 1:
-        # arg, if any, is the desired port number
-        port = int(sys.argv[1])
-        assert(port>1024)
-    else:
-        port = os.getuid()
-    # set this local variable to 'wmdb' or your personal or team db
-    db_to_use = 'roomie-match_db' 
-    print(f'will connect to {db_to_use}')
-    dbi.conf(db_to_use)
-    app.debug = True
-    app.run('0.0.0.0',port)
 
+
+def getUser(conn, id):
+    '''gets user's details '''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    userInfo = curs.execute('''select name, profile_desc from user inner join post
+                            using(user_id) where user_id = %s''', [id])
+    return curs.fetchone()
+
+""" def insert_new_post(conn):
+    '''Inserts new post data'''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''insert into post values(%s, %s, %s, %s)''', [], [], [], ) """

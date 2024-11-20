@@ -9,14 +9,15 @@
     </label> <select id="post_type" name ="post_type" required>
         <option value="">select</option>
         <option value="roommate">roommates(Looking for roommates to join your housing)</option>
-        <option value="housing">housing</option>
+        <option value="housing">housing</option> 
+        </select> </p>
     <p><label for="housing_type"> Housing type: 
     </label> <select id="housing_type" name ="housing_type" required>
         <option value="">select</option>
         <option value="long-term-post-grad">Longterm Post-grad</option>
         <option value="summer">Summer</option>
         <option value="winter">Winter</option>
-        <option value="short-term">Short-term</option>
+        <option value="short-term">Short-term</option> </select> </p>
 
     <p><label for="budget"> How much is the monthly rent?
         <input required type="budget" name="budget" id= "budget"> </label> </p>
@@ -46,7 +47,7 @@
 
 <p>If you already have housing and looking for roommates,
     Upload pictures of your appartment/house:</p>
-    <form method="post" action="{{url_for('file_upload')}}" enctype="multipart/form-data">
+    <form method="post" action="{{url_for('insert_new_post')}}" enctype="multipart/form-data">
         <p><label>Pic: <input type="file" name="pic"></label></p>
         <p><input type="submit" value="upload"></p>
     </form>
