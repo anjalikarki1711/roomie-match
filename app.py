@@ -6,10 +6,17 @@ app = Flask(__name__)
 # one or the other of these. Defaults to MySQL (PyMySQL)
 # change comment characters to switch to SQLite
 
-import cs304dbi as dbi
-# import cs304dbi_sqlite3 as dbi
 
+# import cs304dbi_sqlite3 as dbi
+from werkzeug.utils import secure_filename
 import secrets
+import imghdr
+import cs304dbi as dbi
+
+
+# new for file upload
+app.config['UPLOADS'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 5*1024*1024 # 5 MB
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -67,6 +74,23 @@ def insert_new_post():
     pets = request.form.get('ok_with_pets')
     description = request.form.get("descr")
     return render_template('successfulPost.html')
+
+@app.route('/upload/', methods=["GET", "POST"])
+def file_upload():
+    f = request.files['pic']
+    user_filename = f.filename
+    ext = user_filename.split('.')[-1]
+    filename = secure_filename('{}.{}'.format(nm,ext))
+    pathname = os.path.join(app.config['UPLOADS'],filename)
+    f.save(pathname)
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''insert into picfile(nm,filename) values (%s,%s)
+            on duplicate key update filename = %s''',
+        [filename, filename])
+    conn.commit()
+    flash('Upload successful')
 
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():

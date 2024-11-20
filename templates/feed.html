@@ -5,12 +5,12 @@
 
 {% for post in allPosts %}
 
-{%  {{userDetails }} %}
+  <!-- {{ userDetails }}  -->
 <div class="post" >
     <p><img class="profPics" src="{{src}}" alt="profPic"> 
     
-        {{userDetails.name}} is looking for {{post.post_type}} </p>
-        <p>{{UserDetails.prof_desc}}</p>
+        {{name}} is looking for {{post.post_type}} </p>
+        <p>{{prof_desc}}</p>
         <ul>
             <li>Location: {{post.city}}, {{post.state}}</li>
             <li>Monthly Rent: {{post.budget}}</li>

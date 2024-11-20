@@ -92,3 +92,7 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
     width: fit-content;
     padding: 10px;
 }
+
+.newPostFom{
+    text-align: center;
+}
