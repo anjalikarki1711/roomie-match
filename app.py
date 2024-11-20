@@ -6,10 +6,13 @@ app = Flask(__name__)
 # one or the other of these. Defaults to MySQL (PyMySQL)
 # change comment characters to switch to SQLite
 
-import cs304dbi as dbi
+
 # import cs304dbi_sqlite3 as dbi
+import cs304dbi as dbi
+import bcrypt
 
 import secrets
+
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -46,6 +49,45 @@ def editProfile():
 def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
+
+@app.route('/sign-up/', methods=["GET", "POST"])
+def join():
+    if request.method == "GET":
+        return render_template ("sign-up.html", page_title="Sign Up")
+
+    
+    else: 
+        username = request.form.get('user-name')
+        passwd1 = request.form.get('password1')
+        passwd2 = request.form.get('password2')
+        if passwd1 != passwd2:
+            flash('passwords do not match')
+            return redirect( url_for('join'))
+        hashed = bcrypt.hashpw(passwd1.encode('utf-8'),
+                            bcrypt.gensalt())
+        stored = hashed.decode('utf-8')
+        print(passwd1, type(passwd1), hashed, stored)
+
+        #connect to database
+        conn = dbi.connect()
+        curs = dbi.cursor(conn)
+        try:
+            curs.execute('''INSERT INTO login(user_name,hashed_password)
+                            VALUES(%s,%s)''',
+                        [username, stored])
+            conn.commit()
+        except Exception as err:
+            flash('That email is tied to an existing account: {}'.format(repr(err)))
+            return redirect(url_for('index'))
+        curs.execute('select last_insert_id()')
+        row = curs.fetchone()
+        uid = row[0]
+        flash('FYI, you were issued UID {}'.format(uid))
+        session['username'] = username
+        session['uid'] = uid
+        session['logged_in'] = True
+        session['visits'] = 1
+        return redirect( url_for('viewProfile' ) ) #, username=username) )
 
 if __name__ == '__main__':
     import sys, os

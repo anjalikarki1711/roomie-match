@@ -3,19 +3,15 @@
 {# replaces default content block #}
 {% block content %}
 
-<form id="sign-up-form"
+<form id="login-form"
       method="post"
-      action="/sign-up">
+      action="/login">
 
 <p><label>Email:
     <input required type="text" name="user-name" size="50"></label></p>
 
 <p><label>Password:
-    <input required name="password1" size="50"></textarea>
-</label></p>
-
-<p><label>Re-type Password:
-    <input required name="password2" size="50"></textarea>
+    <input required name="password" size="50"></textarea>
 </label></p>
 
 
