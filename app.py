@@ -18,6 +18,33 @@ app.secret_key = secrets.token_hex()
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
+#helper functions
+def getPostDetails(conn):
+    '''gets post details from the database'''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    posts = curs.execute('''select user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
+            budget, housing_type, post_type from post ''')
+    return curs.fetchall()
+
+
+
+def getUser(conn, id):
+    '''gets user's details '''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    userInfo = curs.execute('''select name, profile_desc from user inner join post
+                            using(user_id) where user_id = %s''', [id])
+    return curs.fetchone()
+
+""" def insert_new_post(conn):
+    '''Inserts new post data'''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''insert into post values(%s, %s, %s, %s)''', [], [], [], ) """
+
+
+
 @app.route('/')
 def index():
     return render_template('home.html',
@@ -27,10 +54,34 @@ def index():
 def makePosts():
     return render_template('makePosts.html',
                            page_title='Make a Post')
+
+
+@app.route('/insert-postData/', methods=['POST'])
+def insert_new_post():
+    p_type = request.form.get('post_type')
+    h_type = request.form.get('housing_type')
+    rent = request.form.get('budget')
+    roommatesNum = request.form.get('max_roommates')
+    sbed = request.form.get('shared_bedroom')
+    sbath = request.form.get('mshared_bathroom')
+    pets = request.form.get('ok_with_pets')
+    description = request.form.get("descr")
+    return render_template('successfulPost.html')
+
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
+    conn = dbi.connect()
+    posts = getPostDetails(conn)
+   
+    if posts:
+        for info in posts:
+            userInfo = getUser(conn, info['user_id'])
     return render_template('feed.html',
-                           page_title='Posts')
+                           page_title='Posts',
+                            allPosts = posts,
+                            userDetails = userInfo,
+                            name = userInfo["name"],
+                            prof_desc = userInfo['profile_desc'] )
 
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
@@ -47,10 +98,22 @@ def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
 
-@app.route('/newPost/', method= ["GET", "POST"])
-def insert():
-    
-    
+# @app.route('/chat/<int:id>', methods=["GET", "POST"])
+# def sendMessage(id):
+#     conn = dbi.connect()
+#     posts = getPostDetails(conn)
+#     if posts:
+#         for info in posts:
+#             id = info['user_id']
+
+#     return render_template('chat.html',
+#                            page_title='Chat History')
+
+
+@app.route('/processPost/', methods=["POST"])
+def processPost():
+    conn = dbi.connect()    
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     import sys, os

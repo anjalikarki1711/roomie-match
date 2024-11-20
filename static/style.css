@@ -59,6 +59,7 @@ nav button, nav a {
     font-family: var(--font-family);
     font-weight: bold;
     font-size: 1rem;
+    text-decoration: None;
 }
 
 /* Only the top-level buttons are centered; lower ones are left-aligned. */
@@ -82,4 +83,12 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
         padding:0.9em;
         color: black;
         visibility: visible;
+}
+
+.post{
+    border: 2px solid #007ea9;;
+    border-radius: 5px;
+    border-radius: 15px;
+    width: fit-content;
+    padding: 10px;
 }
