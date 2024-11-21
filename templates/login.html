@@ -2,23 +2,23 @@
 
 {# replaces default content block #}
 {% block content %}
+<div class="form">
+    <form id="login-form"
+        method="post"
+        action="/login">
 
-<form id="login-form"
-      method="post"
-      action="/login">
+    <p><label>Email:
+        <input required type="text" name="username" size="50" placeholder="Please enter @wellesley.edu email"></label></p>
 
-<p><label>Email:
-    <input required type="text" name="username" size="50"></label></p>
-
-<p><label>Password:
-    <input required name="password" size="50"></textarea>
-</label></p>
+    <p><label>Password:
+        <input required name="password" size="50" placeholder="Please use letters, digits & special characters"></textarea>
+    </label></p>
 
 
-<p><input type="submit" value="Login">
+    <p><input type="submit" value="Login">
 
-</form>
-
+    </form>
+</div>
 <h2 id="signupButton" class="loginButtons"><a href="{{url_for('join')}}">Sign Up</a></h2>
 
 

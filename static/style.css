@@ -107,8 +107,12 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
 .login{
     padding: 20px;
 }
-#loginButton{
+#loginButton, #signupButton{
     margin-left: 30px;
 }
 
+.form{
+    padding: 5px;
+    margin-left: 30px;
+}
 
