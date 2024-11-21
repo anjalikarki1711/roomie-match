@@ -20,10 +20,12 @@ HTML {
 h1 {
     font-size: 200%;
     color: var(--color-header);
+    padding: 10px;
 }
 
 h2, h3 {
     color: var(--color-header);
+    padding: 10px;
 }
     
 
@@ -85,13 +87,28 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
 }
 .loginButtons{
     display: inline-block;
-            padding: 10px 20px;
-            font-size: 18px;
-            color: white;
-            background-color: #007ea9;
-            border: 2px solid #000;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
+    padding: 5px 20px;
+    font-size: 18px;
+    background-color: #007ea9;
+    border: 2px solid #000;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
 }
+.loginButtons a{
+    color: white
+}
+
+.loginSignup{
+    display: inline-flex;
+    align-items: center;
+}
+.login{
+    padding: 20px;
+}
+#loginButton{
+    margin-left: 30px;
+}
+
+
