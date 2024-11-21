@@ -14,6 +14,7 @@ import bcrypt
 import secrets
 
 import login
+import messages
 
 
 app.secret_key = 'your secret here'
