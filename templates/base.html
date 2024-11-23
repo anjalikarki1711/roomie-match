@@ -1,7 +1,5 @@
 <!--Roomie Match Project by Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga-->
 <!--Base template for final project. Sets up nav bar at the top with options of Home, Profile, Posts, and Chat-->
-<!--Roomie Match Project by Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga-->
-<!--Base template for final project. Sets up nav bar at the top with options of Home, Profile, Posts, and Chat-->
 <!doctype html>
 <html lang='en'>
 <head>
@@ -11,21 +9,8 @@
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
     {% block head_stuff %} {% endblock %}
-    {% block head_stuff %} {% endblock %}
 </head>
 <body>
-
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<div id="messages">
-  {% for msg in messages %}
-  <p>{{msg}}</p>
-  {% endfor %}
-</div>
-{% endif %}
-{% endwith %}
-            
-{% block nav %}
 
 {% with messages = get_flashed_messages() %}
 {% if messages %}
@@ -46,22 +31,13 @@
     <li><a href="{{url_for('makePosts')}}">Make a Post</a></li>
     <li><a href="{{url_for('viewChat')}}">Chat</a></li>
   </ul>
-  <ul>
-    <li><a href="{{url_for('index')}}">Home</a></li>
-    <li><a href="{{url_for('viewProfile')}}">Profile</a></li>
-    <li><a href="{{url_for('viewPosts')}}">Posts</a></li>
-    <li><a href="{{url_for('makePosts')}}">Make a Post</a></li>
-    <li><a href="{{url_for('viewChat')}}">Chat</a></li>
-  </ul>
 </nav>
 {% endblock %}
-
 
 {% block main_content %}
 <h1>Welcome!</h1>
 {% endblock %}
 
-{% endblock %}
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   {% block end_scripts %}
   {% endblock %}

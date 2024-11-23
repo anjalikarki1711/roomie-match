@@ -53,7 +53,6 @@ def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
 
-
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:

@@ -14,6 +14,22 @@ HTML {
 #messages {
     color: var(--color-hilite);
     font-style: italic;
+/* the --color-header and others are CSS variables, which we access later. 
+*/
+
+HTML {
+    --color-header: #007ea9;  /* color for H1-H6 and others. was deepskyblue but poor contrast. */
+    --color-hilite: #b50000;  /* was red, but this avoids WAVE contrast errors */ 
+    --color-focus: #56B929;
+    --font-family: Verdana;
+    font-family: var(--font-family)
+}
+
+/* For flashed messages; make them stand out using red and italics */
+
+#messages {
+    color: var(--color-hilite);
+    font-style: italic;
 }
 
 
@@ -64,11 +80,22 @@ nav button, nav a {
 /* Only the top-level buttons are centered; lower ones are left-aligned. */
 nav > ul > li > button , nav > ul > li > a {
     text-align: center;
-    padding: 14px 16px;
-    color: ;
+    color: white;
 }
 
-.logo{
-    align-items: left;
-    
+/* because of the margin trick, this can only be used for the last element */
+
+nav li.right {
+    margin-left: auto;
+}
+
+nav button:hover, button:focus, nav a:hover, nav a:focus {
+    background-color: var(--color-focus);
+}
+
+.dropdown{
+        background-color: white;
+        padding:0.9em;
+        color: black;
+        visibility: visible;
 }
