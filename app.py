@@ -15,7 +15,7 @@ import homepage
 import cs304dbi as dbi
 
 
-# new for file upload
+#for file upload
 app.config['UPLOADS'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 5*1024*1024 # 5 MB
 
@@ -34,12 +34,18 @@ def index():
 
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
-    return render_template('makePosts.html',
+    if request.method == 'GET':
+        return render_template('makePosts.html',
                            page_title='Make a Post')
-
-
-@app.route('/insert-postData/', methods=['POST'])
-def insert_new_post():
+    else:
+        conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    #use last_inserted_id to get the post id
+    curs.execute('''
+                 select last_insert_id''')
+    pidDict = curs.fetchone()
+    pid = pidDict['last_insert_id()']
+    #retrieves form data 
     p_type = request.form.get('post_type')
     h_type = request.form.get('housing_type')
     rent = request.form.get('budget')
@@ -48,21 +54,32 @@ def insert_new_post():
     sbath = request.form.get('mshared_bathroom')
     pets = request.form.get('ok_with_pets')
     description = request.form.get("descr")
-    return render_template('successfulPost.html')
-    # f = request.files['pic']
-    # user_filename = f.filename
-    # ext = user_filename.split('.')[-1]
-    # filename = secure_filename('{}.{}'.format(ext))
-    # pathname = os.path.join(app.config['UPLOADS'],filename)
-    # f.save(pathname)
-    # conn = dbi.connect()
-    # curs = dbi.dict_cursor(conn)
-    # curs.execute(
-    #     '''insert into picfile(nm,filename) values (%s,%s)
-    #         on duplicate key update filename = %s''',
-    #     [filename, filename])
-    # conn.commit()
-    # flash('Upload successful')
+    uid = session.get('user_id')
+    f = request.files['pic']
+    user_filename = f.filename
+    ext = user_filename.split('.')[-1]
+    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
+    pathname = os.path.join(app.config['UPLOADS'],filename)
+    f.save(pathname)
+
+    #insert into the database
+    #checks wether the inputs are integers
+    if homepage.isInt(rent) and homepage.isInt(roommatesNum):
+        curs.execute(
+            '''insert into post(user_id, shared_bathroom, shared_bedroom, 
+            ok_with_pets, max_roommates, budget, housing_type, post_type) 
+            values (%s,%s,%s,%s,%s,%s,%s,%s)''',
+            [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type])
+
+        curs.execute(
+            '''insert into file(user_id, post_id, room_pic) values (%s,%s, %s)
+                ''', [uid, pid, filename])
+        conn.commit()
+        flash('Post successful')
+        return redirect(url_for('viewPosts'))
+    flash('Budget and max_number of roomates should be integers')
+
+    
 
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
@@ -72,12 +89,14 @@ def viewPosts():
     if posts:
         for info in posts:
             userInfo = homepage.getUser(conn, info['user_id'])
-    return render_template('feed.html',
+            print(userInfo)
+            return render_template('feed.html',
                            page_title='Posts',
                             allPosts = posts,
                             userDetails = userInfo,
                             name = userInfo["name"],
-                            prof_desc = userInfo['profile_desc'] )
+                            prof_desc = userInfo['profile_desc'] 
+                            )
 
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
@@ -93,17 +112,6 @@ def editProfile():
 def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
-
-# @app.route('/chat/<int:id>', methods=["GET", "POST"])
-# def sendMessage(id):
-#     conn = dbi.connect()
-#     posts = getPostDetails(conn)
-#     if posts:
-#         for info in posts:
-#             id = info['user_id']
-
-#     return render_template('chat.html',
-#                            page_title='Chat History')
 
 
 

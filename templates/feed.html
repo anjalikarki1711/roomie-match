@@ -5,15 +5,13 @@
 
 {% for post in allPosts %}
 
-  <!-- {{ userDetails }}  -->
 <div class="post" >
     <p><img class="profPics" src="{{src}}" alt="profPic"> 
-    
         {{name}} is looking for {{post.post_type}} </p>
         <p>{{prof_desc}}</p>
         <ul>
             <li>Location: {{post.city}}, {{post.state}}</li>
-            <li>Monthly Rent: {{post.budget}}</li>
+            <li>Monthly Rent: ${{post.budget}}</li>
             <li>Maximum Number of Roommates Needed: {{post.max_roommates}}</li>
             <li>Shared Bathroom: {{post.shared_bathroom}}</li>
             <li>Shared Bedroom: {{post.shared_bedroom}}</li>
@@ -23,6 +21,7 @@
         <form method="get" action="{{url_for('viewChat')}}">
         <p><input type="submit" id="submit" value="Message {{name}}"> </p>
         </form>
+       
 </div>
 <p> </p>
 {% endfor %}
