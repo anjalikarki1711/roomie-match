@@ -8,14 +8,16 @@ app = Flask(__name__)
 
 
 # import cs304dbi_sqlite3 as dbi
-import cs304dbi as dbi
-import bcrypt
-
+from werkzeug.utils import secure_filename
 import secrets
+import homepage
 
-import login
-import messages
+import cs304dbi as dbi
 
+
+#for file upload
+app.config['UPLOADS'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 5*1024*1024 # 5 MB
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -24,6 +26,7 @@ app.secret_key = secrets.token_hex()
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
+
 @app.route('/')
 def index():
     return render_template('home.html',
@@ -31,12 +34,68 @@ def index():
 
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
-    return render_template('makePosts.html',
+    if request.method == 'GET':
+        return render_template('makePosts.html',
                            page_title='Make a Post')
+    else:
+        conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    #use last_inserted_id to get the post id
+    curs.execute('''
+                 select last_insert_id''')
+    pidDict = curs.fetchone()
+    pid = pidDict['last_insert_id()']
+    #retrieves form data 
+    p_type = request.form.get('post_type')
+    h_type = request.form.get('housing_type')
+    rent = request.form.get('budget')
+    roommatesNum = request.form.get('max_roommates')
+    sbed = request.form.get('shared_bedroom')
+    sbath = request.form.get('mshared_bathroom')
+    pets = request.form.get('ok_with_pets')
+    description = request.form.get("descr")
+    uid = session.get('user_id')
+    f = request.files['pic']
+    user_filename = f.filename
+    ext = user_filename.split('.')[-1]
+    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
+    pathname = os.path.join(app.config['UPLOADS'],filename)
+    f.save(pathname)
+
+    #insert into the database
+    #checks wether the inputs are integers
+    if homepage.isInt(rent) and homepage.isInt(roommatesNum):
+        curs.execute(
+            '''insert into post(user_id, shared_bathroom, shared_bedroom, 
+            ok_with_pets, max_roommates, budget, housing_type, post_type) 
+            values (%s,%s,%s,%s,%s,%s,%s,%s)''',
+            [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type])
+
+        curs.execute(
+            '''insert into file(user_id, post_id, room_pic) values (%s,%s, %s)
+                ''', [uid, pid, filename])
+        conn.commit()
+        flash('Post successful')
+        return redirect(url_for('viewPosts'))
+    flash('Budget and max_number of roomates should be integers')
+
+    
+
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
-    return render_template('feed.html',
-                           page_title='Posts')
+    conn = dbi.connect()
+    posts = homepage.getPostDetails(conn)
+   
+    if posts:
+        for info in posts:
+            userInfo = homepage.getUser(conn, info['user_id'])
+            print(userInfo)
+            return render_template('feed.html',
+                           page_title='Posts',
+                            allPosts = posts,
+                            name = userInfo["name"],
+                            prof_desc = userInfo['profile_desc'] 
+                            )
 
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
@@ -52,6 +111,7 @@ def editProfile():
 def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
+
 
 
 if __name__ == '__main__':
