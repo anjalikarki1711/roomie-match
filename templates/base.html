@@ -1,46 +1,47 @@
+<!--Roomie Match Project by Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga-->
+<!--Base template for final project. Sets up nav bar at the top with options of Home, Profile, Posts, and Chat-->
 <!doctype html>
 <html lang='en'>
 <head>
     <meta charset='utf-8'>
     <!-- for mobile-friendly pages -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name=Flora Mukako content="base-template">
     <title>{{ page_title }}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
-    {% block head_stuff %} 
-    <!--navigation bar-->
-    <h1> Roomie-Match</h1>
-    <div id="logo">
-        <img src="" alt="ourLogo"> 
-    </div>
-    <div class="navbar">
-        <a href="{{ url_for() }}"> Home </a>
-        <a href="{{ url_for() }}"> Message </a>
-        <a href="{{ url_for() }}"> Profile </a>
-        <a href="{{ url_for() }}"> FAQs </a>
-
-
-    </div>
-
-    
-    {% endblock %}
+    {% block head_stuff %} {% endblock %}
 </head>
 <body>
-    {% block nav %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div id="messages">
+  {% for msg in messages %}
+  <p>{{msg}}</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+            
+{% block nav %}
 <nav>
-  
+  <ul>
+    <li><a href="{{url_for('index')}}">Home</a></li>
+    <li><a href="{{url_for('viewProfile')}}">Profile</a></li>
+    <li><a href="{{url_for('viewPosts')}}">Posts</a></li>
+    <li><a href="{{url_for('makePosts')}}">Make a Post</a></li>
+    <li><a href="{{url_for('viewChat')}}">Chat</a></li>
+  </ul>
 </nav>
 {% endblock %}
 
-            
 {% block main_content %}
-
 {% endblock %}
 
+{% block content %}
 
+{% endblock %}
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   {% block end_scripts %}
-
   {% endblock %}
   
 </body>

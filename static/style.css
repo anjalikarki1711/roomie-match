@@ -1,20 +1,117 @@
-h1{
-    font-family: Georgia, 'Times New Roman', Times, serif;
+/* the --color-header and others are CSS variables, which we access later. 
+*/
+
+HTML {
+    --color-header: #007ea9;  /* color for H1-H6 and others. was deepskyblue but poor contrast. */
+    --color-hilite: #b50000;  /* was red, but this avoids WAVE contrast errors */ 
+    --color-focus: #56B929;
+    --font-family: Verdana;
+    font-family: var(--font-family)
 }
 
-.navbar{
-    align-content: center;
-    background-color: ;
+/* For flashed messages; make them stand out using red and italics */
 
+#messages {
+    color: var(--color-hilite);
+    font-style: italic;
 }
 
-.navbar a{
-    text-align: center;
-    padding: 14px 16px;
-    color: ;
+
+h1 {
+    font-size: 200%;
+    color: var(--color-header);
+    padding: 10px;
 }
 
-.logo{
-    align-items: left;
+h2, h3 {
+    color: var(--color-header);
+    padding: 10px;
+}
     
+
+/* for a simple navbar. Talk to Scott if you want drop-downs. */
+nav > ul {
+    display: flex;
+    flex-direction: row;
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+nav > ul > li {
+    flex: 0 0 auto;
+    width: 20em; 
+}
+
+nav button, nav a {
+    display: block;
+    box-sizing: border-box; /* easier to make button and A the same size */
+    width: 100%;
+    height: 40px;
+    padding: 0px;
+    padding-bottom: 5px;
+    background-color: var(--color-header); /* was #3498db */
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+    /* Firefox uses font -apple-system unless I repeat the font spec here. */
+    font-family: var(--font-family);
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+/* Only the top-level buttons are centered; lower ones are left-aligned. */
+nav > ul > li > button , nav > ul > li > a {
+    text-align: center;
+    color: white;
+}
+
+/* because of the margin trick, this can only be used for the last element */
+
+nav li.right {
+    margin-left: auto;
+}
+
+nav button:hover, button:focus, nav a:hover, nav a:focus {
+    background-color: var(--color-focus);
+}
+
+.dropdown{
+        background-color: white;
+        padding:0.9em;
+        color: black;
+        visibility: visible;
+}
+.loginButtons{
+    display: inline-block;
+    padding: 5px 20px;
+    font-size: 18px;
+    background-color: #007ea9;
+    border: 2px solid #000;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+.loginButtons a{
+    color: white
+}
+
+.loginSignup{
+    display: inline-flex;
+    align-items: center;
+}
+.login{
+    padding: 20px;
+}
+#loginButton, #signupButton{
+    margin-left: 30px;
+}
+
+.form{
+    padding: 5px;
+    margin-left: 30px;
 }

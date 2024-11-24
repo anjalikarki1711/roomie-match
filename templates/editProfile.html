@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block main_content %}
+    <h1>Welcome, {{ username }}</h1>
+
+    <form action="{{ url_for('edit_profile_desc') }}" method="post">
+        <textarea name="profile_desc" rows="4" cols="50" required>{{ profile_desc }}</textarea>
+        <button type="submit">Update Description</button>
+    </form>
+
+    <form action="{{ url_for('edit_location') }}" method="post">
+        <input type="text" name="location" value="{{ location }}" required>
+        <button type="submit">Update Location</button>
+    </form>
+
+    <form action="{{ url_for('edit_hobbies') }}" method="post">
+        <input type="text" name="hobbies" value="{{ hobbies }}" required>
+        <button type="submit">Update Hobbies</button>
+    </form>    
+
+    <form method="POST" action="{{ url_for('delete_account') }}">
+        <button type="submit">Delete Account</button>
+    </form>
+    
+{% endblock %}
