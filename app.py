@@ -35,69 +35,81 @@ def index():
 
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
-    if request.method == 'GET':
-        return render_template('makePosts.html',
-                           page_title='Make a Post')
+    if 'user_id' in session:
+        uid = session['user_id']
+        if request.method == 'GET':
+            return render_template('makePosts.html',
+                            page_title='Make a Post')
+        else: 
+            conn = dbi.connect()
+            curs = dbi.dict_cursor(conn)
+            #use last_inserted_id to get the post id
+            curs.execute('''
+                        select last_insert_id''')
+            pidDict = curs.fetchone()
+            pid = pidDict['last_insert_id()']
+            #retrieves form data 
+            p_type = request.form.get('post_type')
+            h_type = request.form.get('housing_type')
+            rent = request.form.get('budget')
+            roommatesNum = request.form.get('max_roommates')
+            sbed = request.form.get('shared_bedroom')
+            sbath = request.form.get('mshared_bathroom')
+            pets = request.form.get('ok_with_pets')
+            description = request.form.get("descr")
+            f = request.files['pic']
+            user_filename = f.filename
+            ext = user_filename.split('.')[-1]
+            filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
+            pathname = os.path.join(app.config['UPLOADS'],filename)
+            f.save(pathname)
+
+        #insert into the database
+        #checks wether the inputs are integers
+            if homepage.isInt(rent) and homepage.isInt(roommatesNum):
+                curs.execute(
+                    '''insert into post(user_id, shared_bathroom, shared_bedroom, 
+                    ok_with_pets, max_roommates, budget, housing_type, post_type) 
+                    values (%s,%s,%s,%s,%s,%s,%s,%s)''',
+                    [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type])
+
+                curs.execute(
+                    '''insert into file(user_id, post_id, room_pic) values (%s,%s, %s)
+                        ''', [uid, pid, filename])
+                conn.commit()
+                flash('Post successful')
+                return redirect(url_for('viewPosts'))
+            else:
+                flash('Budget and max_number of roomates should be integers')
     else:
-        conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
-    #use last_inserted_id to get the post id
-    curs.execute('''
-                 select last_insert_id''')
-    pidDict = curs.fetchone()
-    pid = pidDict['last_insert_id()']
-    #retrieves form data 
-    p_type = request.form.get('post_type')
-    h_type = request.form.get('housing_type')
-    rent = request.form.get('budget')
-    roommatesNum = request.form.get('max_roommates')
-    sbed = request.form.get('shared_bedroom')
-    sbath = request.form.get('mshared_bathroom')
-    pets = request.form.get('ok_with_pets')
-    description = request.form.get("descr")
-    uid = session.get('user_id')
-    f = request.files['pic']
-    user_filename = f.filename
-    ext = user_filename.split('.')[-1]
-    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
-    pathname = os.path.join(app.config['UPLOADS'],filename)
-    f.save(pathname)
-
-    #insert into the database
-    #checks wether the inputs are integers
-    if homepage.isInt(rent) and homepage.isInt(roommatesNum):
-        curs.execute(
-            '''insert into post(user_id, shared_bathroom, shared_bedroom, 
-            ok_with_pets, max_roommates, budget, housing_type, post_type) 
-            values (%s,%s,%s,%s,%s,%s,%s,%s)''',
-            [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type])
-
-        curs.execute(
-            '''insert into file(user_id, post_id, room_pic) values (%s,%s, %s)
-                ''', [uid, pid, filename])
-        conn.commit()
-        flash('Post successful')
-        return redirect(url_for('viewPosts'))
-    flash('Budget and max_number of roomates should be integers')
+        flash('Please log in to continue!') 
+        return redirect(url_for('index'))
 
     
 
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
-    conn = dbi.connect()
-    posts = homepage.getPostDetails(conn)
-    print(posts)
-   
-    if posts:
-        for info in posts:
-            userInfo = homepage.getUser(conn, info['user_id'])
-            info['name'] = userInfo['name']
-            # print(userInfo)
-            # print(info)
+    #Only allow logged in users to view the feed
+    if 'user_id' in session:
+        conn = dbi.connect()
+        posts = homepage.getPostDetails(conn)
+        print(posts)
+    
+        if posts:
+            for info in posts:
+                userInfo = homepage.getUser(conn, info['user_id'])
+                info['name'] = userInfo['name']
+                # print(userInfo)
+                # print(info)
 
-        return render_template('feed.html',
-                        page_title='Posts',
-                        allPosts = posts)
+            return render_template('feed.html',
+                            page_title='Posts',
+                            allPosts = posts)
+    #If they are not logged in, redirect to log in page with a message
+    else:
+        flash('You must be logged in to view the posts!')
+        return redirect(url_for('index'))
+    
 
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
