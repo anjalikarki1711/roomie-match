@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 from __main__ import app
 import datetime
 
-import bcrypt
+#import bcrypt
 import cs304dbi as dbi
 
 @app.route('/message/<recipient_uid>', methods=["GET", "POST"])

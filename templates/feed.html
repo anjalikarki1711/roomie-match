@@ -1,1 +1,28 @@
 {% extends "base.html" %}
+
+{% block main_content %}
+<h1>Roomie-match</h1>
+
+{% for post in allPosts %}
+
+<div class="post" >
+    <p><img class="profPics" src="{{src}}" alt="profPic"> 
+        {{post.name}} is looking for {{post.post_type}} </p>
+        <p>{{prof_desc}}</p>
+        <ul>
+            <li>Location: {{post.city}}, {{post.state}}</li>
+            <li>Monthly Rent: ${{post.budget}}</li>
+            <li>Maximum Number of Roommates Needed: {{post.max_roommates}}</li>
+            <li>Shared Bathroom: {{post.shared_bathroom}}</li>
+            <li>Shared Bedroom: {{post.shared_bedroom}}</li>
+            <li>Pets Friendly: {{post.ok_with_pets}}</li>
+            
+        </ul>
+        <form method="get" action="{{url_for('viewChat')}}">
+        <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
+        </form>
+       
+</div>
+<p> </p>
+{% endfor %}
+{% endblock %}

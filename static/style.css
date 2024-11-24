@@ -61,6 +61,7 @@ nav button, nav a {
     font-family: var(--font-family);
     font-weight: bold;
     font-size: 1rem;
+    text-decoration: None;
 }
 
 /* Only the top-level buttons are centered; lower ones are left-aligned. */
@@ -115,3 +116,57 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
     padding: 5px;
     margin-left: 30px;
 }
+
+.post{
+    border: 2px solid #007ea9;;
+    border-radius: 5px;
+    border-radius: 15px;
+    width: fit-content;
+    padding: 10px;
+    align-items: center;
+}
+
+.newPostFom{
+    text-align: center;
+}
+
+input[type=button], input[type=submit] {
+    background-color: #007ea9;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-family: var(--font-family);
+    margin: 4px 2px;
+    font-family: var(--font-family);
+    font-size: 1rem;
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+.post{
+    border: 2px solid #007ea9;;
+    border-radius: 5px;
+    border-radius: 15px;
+    width: fit-content;
+    padding: 10px;
+    align-items: center;
+}
+
+.newPostFom{
+    text-align: center;
+}
+
+input[type=button], input[type=submit] {
+    background-color: #007ea9;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-family: var(--font-family);
+    margin: 4px 2px;
+    font-family: var(--font-family);
+    font-size: 1rem;
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+  }
