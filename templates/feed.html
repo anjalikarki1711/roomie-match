@@ -7,7 +7,7 @@
 
 <div class="post" >
     <p><img class="profPics" src="{{src}}" alt="profPic"> 
-        {{name}} is looking for {{post.post_type}} </p>
+        {{post.name}} is looking for {{post.post_type}} </p>
         <p>{{prof_desc}}</p>
         <ul>
             <li>Location: {{post.city}}, {{post.state}}</li>
@@ -19,7 +19,7 @@
             
         </ul>
         <form method="get" action="{{url_for('viewChat')}}">
-        <p><input type="submit" id="submit" value="Message {{name}}"> </p>
+        <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
         </form>
        
 </div>

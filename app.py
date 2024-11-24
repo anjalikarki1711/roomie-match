@@ -86,17 +86,18 @@ def makePosts():
 def viewPosts():
     conn = dbi.connect()
     posts = homepage.getPostDetails(conn)
+    print(posts)
    
     if posts:
         for info in posts:
             userInfo = homepage.getUser(conn, info['user_id'])
-            print(userInfo)
-            return render_template('feed.html',
-                           page_title='Posts',
-                            allPosts = posts,
-                            name = userInfo["name"],
-                            prof_desc = userInfo['profile_desc'] 
-                            )
+            info['name'] = userInfo['name']
+            # print(userInfo)
+            # print(info)
+
+        return render_template('feed.html',
+                        page_title='Posts',
+                        allPosts = posts)
 
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
