@@ -203,8 +203,8 @@ def viewProfile():
             # Construct the file path and URL
             profile_pic_path = os.path.join(app.config['UPLOADS'], 'profile_pics', profile_pic_filename)
             if os.path.exists(profile_pic_path):
-                profile_pic = url_for('static', filename=f"profile_pics/{profile_pic_filename}")
-                print(profile_pic)
+                profile_pic = f'/pic/{profile_pic_filename}'
+                print(f"Profile picture path: {profile_pic_path}")
             else:
                 profile_pic = None  # If no picture exists
         else:
@@ -215,7 +215,6 @@ def viewProfile():
     else:
         flash("User not found.")
         return redirect(url_for('index'))
-    return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
 
 @app.route('/upload-profile-pic/', methods=["POST"])
 def upload_profile_pic():
