@@ -10,7 +10,7 @@ app = Flask(__name__)
 # import cs304dbi_sqlite3 as dbi
 from werkzeug.utils import secure_filename
 import secrets
-import homepage
+import homepage as homepage
 
 import cs304dbi as dbi
 
