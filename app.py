@@ -10,7 +10,8 @@ app = Flask(__name__)
 # import cs304dbi_sqlite3 as dbi
 from werkzeug.utils import secure_filename
 import secrets
-import homepage
+import homepage as homepage
+import login as login
 
 import cs304dbi as dbi
 
@@ -93,7 +94,6 @@ def viewPosts():
             return render_template('feed.html',
                            page_title='Posts',
                             allPosts = posts,
-                            userDetails = userInfo,
                             name = userInfo["name"],
                             prof_desc = userInfo['profile_desc'] 
                             )
