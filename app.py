@@ -137,78 +137,86 @@ def viewChat():
 # Code using login
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
-    print('Session in the viewProfile function: ', session)
-    user_id = session.get('user_id')
-    if not user_id:
-        flash("You must log in to view the profile.")
-        return redirect(url_for('login'))
+    # print('Session in the viewProfile function: ', session)
+    # user_id = session.get('user_id')
+    # if not user_id:
+    #     flash("You must log in to view the profile.")
+    #     return redirect(url_for('login'))
 
-    # Connect to the database
+    # # Connect to the database
+    # conn = dbi.connect()
+    # curs = dbi.dict_cursor(conn)
+
+    # # Fetch user information
+    # curs.execute('SELECT user_id, name, profile_desc, location, hobbies FROM user WHERE user_id = %s', [user_id])
+    # user = curs.fetchone()
+    # print (user)
+
+    # if user:
+    #     # Fetch profile picture file name from file table
+    #     print("1 lalala")
+    #     curs.execute('SELECT profile_pic FROM file WHERE user_id = %s', [user_id])
+    #     profile_pic_file = curs.fetchone()
+
+    #     if profile_pic_file:
+    #         # Construct the file path and URL
+    #         profile_pic_path = os.path.join(app.config['UPLOADS'], 'profile_pics', profile_pic_filename)
+    #         if os.path.exists(profile_pic_path):
+    #             profile_pic = f'/pic/{profile_pic_filename}'
+    #             print(f"Profile picture path: {profile_pic_path}")
+    #         else:
+    #             profile_pic = None  # If no picture exists
+    #     else:
+    #         profile_pic = None  # No profile picture in the file table
+
+    #     return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
+
+    # else:
+    #     flash("User not found.")
+    #     return redirect(url_for('index'))
+
+@app.route('/prof_pic/<file_id>')
+def pic(file_id):
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
-
-    # Fetch user information
-    curs.execute('SELECT user_id, name, profile_desc, location, hobbies FROM user WHERE user_id = %s', [user_id])
-    user = curs.fetchone()
-    print (user)
-
-    if user:
-        # Fetch profile picture file name from file table
-        print("1 lalala")
-        curs.execute('SELECT profile_pic FROM file WHERE user_id = %s', [user_id])
-        profile_pic_file = curs.fetchone()
-
-        if profile_pic_file:
-            # Extract the file name as a string from the BLOB data
-            profile_pic_filename = profile_pic_file['profile_pic']
-            if isinstance(profile_pic_filename, bytes):
-                profile_pic_filename = profile_pic_filename.decode('utf-8')  # Decode bytes to string
-
-            # Construct the file path and URL
-            profile_pic_path = os.path.join(app.config['UPLOADS'], 'profile_pics', profile_pic_filename)
-            if os.path.exists(profile_pic_path):
-                profile_pic = f'/pic/{profile_pic_filename}'
-                print(f"Profile picture path: {profile_pic_path}")
-            else:
-                profile_pic = None  # If no picture exists
-        else:
-            profile_pic = None  # No profile picture in the file table
-
-        return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
-
-    else:
-        flash("User not found.")
+    numrows = curs.execute(
+        '''select profile_pic_filename from file where file_id = %s''',
+        [file_id])
+    if numrows == 0:
+        flash('No picture for {}'.format(file_id))
         return redirect(url_for('index'))
+    row = curs.fetchone()
+    return send_from_directory(app.config['UPLOADS'],row['profile_pic_filename'])
 
 @app.route('/upload-profile-pic/', methods=["POST"])
 def upload_profile_pic():
-    user_id = session.get('user_id')
-    if not user_id:
-        flash("Please log in to upload a profile picture.")
-        return redirect(url_for('viewProfile'))
+    # user_id = session.get('user_id')
+    # if not user_id:
+    #     flash("Please log in to upload a profile picture.")
+    #     return redirect(url_for('viewProfile'))
 
-    file = request.files.get('profile_pic')
+    # file = request.files.get('profile_pic')
 
-    if file and file.filename != '':
-        print(f"File received: {file.filename}")  # Debug message
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOADS'], filename)
+    # if file and file.filename != '':
+    #     print(f"File received: {file.filename}")  # Debug message
+    #     filename = secure_filename(file.filename)
+    #     filepath = os.path.join(app.config['UPLOADS'], filename)
 
-        try:
-            os.makedirs(app.config['UPLOADS'], exist_ok=True)
-            file.save(filepath)
-            print("File saved successfully!")  # Debug message
-            # Update the database here if applicable
-            flash("Profile picture uploaded successfully!")
-            return redirect(url_for('viewProfile'))  # Stop further execution
-        except Exception as e:
-            print(f"Error saving file: {e}")  # Debugging
-            flash("An error occurred while saving the file.")
-            return redirect(url_for('viewProfile'))
+    #     try:
+    #         os.makedirs(app.config['UPLOADS'], exist_ok=True)
+    #         file.save(filepath)
+    #         print("File saved successfully!")  # Debug message
+    #         # Update the database here if applicable
+    #         flash("Profile picture uploaded successfully!")
+    #         return redirect(url_for('viewProfile'))  # Stop further execution
+    #     except Exception as e:
+    #         print(f"Error saving file: {e}")  # Debugging
+    #         flash("An error occurred while saving the file.")
+    #         return redirect(url_for('viewProfile'))
 
-    # If no file was uploaded or it was invalid
-    flash("No file selected or invalid file.")
-    return redirect(url_for('viewProfile'))
+    # # If no file was uploaded or it was invalid
+    # flash("No file selected or invalid file.")
+    # return redirect(url_for('viewProfile'))
 
 
 
@@ -246,14 +254,6 @@ def upload_profile_pic():
 
     return redirect(url_for('viewProfile'))
  """
-@app.route('/pic/<filename>')
-def pic(filename):
-    # Ensure filename is a string and not bytes
-    if isinstance(filename, bytes):
-        filename = filename.decode('utf-8')
-
-    # Serve the image file from the uploads directory
-    return send_from_directory(app.config['UPLOADS'], filename)
 
 @app.route('/edit-profile/', methods=["GET", "POST"])
 def editProfile():
