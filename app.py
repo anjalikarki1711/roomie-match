@@ -3,11 +3,7 @@ from flask import (Flask, render_template, make_response, url_for, request,
 from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
-# one or the other of these. Defaults to MySQL (PyMySQL)
-# change comment characters to switch to SQLite
 
-
-# import cs304dbi_sqlite3 as dbi
 from werkzeug.utils import secure_filename
 import secrets
 import homepage as homepage
@@ -27,14 +23,26 @@ app.secret_key = secrets.token_hex()
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
-
+"""
+This route directs users to the homepage where they can choose to either login or sign up to this app
+Returns: the template home.html
+"""
 @app.route('/')
 def index():
     return render_template('home.html',
                            page_title='Home Page')
 
 
+"""
+The makePosts function handles the creation of new posts by users. It supports both GET and POST requests. 
+Users must be logged in to access this functionality.
 
+If it receives a GET request: Renders the makePosts.html template with the page title “Make a Post”.
+If it receives a POST request: It retrieves form data such as post type, housing type, budget, max roommates, shared bedroom, shared bathroom, 
+pet preferences, a description and location of the post. This is the added to the database and it redirects to the view posts page.
+
+It returns the makePosts.html from a GET request and it redirects to the viewPosts page from a successful POST request
+"""
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
     if 'user_id' in session:
@@ -43,8 +51,7 @@ def makePosts():
             return render_template('makePosts.html',
                             page_title='Make a Post')
         else: 
-            conn = dbi.connect()
-            curs = dbi.dict_cursor(conn)
+            
 
             #retrieves form data 
             p_type = request.form.get('post_type')
@@ -57,7 +64,8 @@ def makePosts():
             description = request.form.get("descr")
             pref_location = request.form.get("location")
             
-
+            conn = dbi.connect()
+            curs = dbi.dict_cursor(conn)
             #insert into the database
             #checks wether the inputs are integers
             if homepage.isInt(rent) and homepage.isInt(roommatesNum):
@@ -96,6 +104,17 @@ def makePosts():
         flash('You must be logged in to make a post!') 
         return redirect(url_for('index'))
 
+"""
+The pic function handles the retrieval and display of a picture associated with a given file ID. 
+
+Input: Users must provide a valid file_id.
+
+If it receives a GET request: It connects to the database and retrieves the filename of the picture associated 
+with the provided file_id. If no picture is found, it displays an error message and redirects to the index page. 
+If a picture is found, it sends the file from the uploads directory.
+
+Returns: the picture file from the uploads directory if found, or redirects to the index page if no picture is found.
+"""
 @app.route('/pic/<file_id>')
 def pic(file_id):
     conn = dbi.connect()
@@ -109,19 +128,19 @@ def pic(file_id):
     row = curs.fetchone()
     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
 
-# @app.route('/profilepic/<file_id>')
-# def pic(file_id):
-#     conn = dbi.connect()
-#     curs = dbi.dict_cursor(conn)
-#     numrows = curs.execute(
-#         '''select profile_pic_filename from file where file_id = %s''',
-#         [file_id])
-#     if numrows == 0:
-#         flash('No picture for {}'.format(file_id))
-#         return redirect(url_for('index'))
-#     row = curs.fetchone()
-#     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename'])
+"""
+The viewPosts function handles the display of posts in the feed. 
+It supports both GET and POST requests. Users must be logged in to access this functionality.
 
+If it receives a GET request: It connects to the database and retrieves post details. 
+For each post, it retrieves the user information and adds the users name to the post details. 
+It then renders the feed.html template with the page title Posts and the list of all posts.
+
+If it receives a POST request: It performs the same actions as a GET request.
+
+Returns: the feed.html template with the list of posts if the user is logged in, 
+or redirects to the index page with an error message if the user is not logged in.
+"""
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
     #Only allow logged in users to view the feed
@@ -153,7 +172,17 @@ def viewPosts():
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
     
+"""
+The viewProfile function handles the display of the user’s profile. It supports both GET and POST requests. 
+Users must be logged in to access this functionality.
 
+If it receives a GET request: It renders the viewProfile.html template.
+
+If it receives a POST request: It performs the same action as a GET request.
+
+Returns: the viewProfile.html template if the user is logged in, or redirects to the index page 
+with an error message if the user is not logged in.
+"""
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
     if 'user_id' in session:
@@ -163,7 +192,17 @@ def viewProfile():
         flash('You must be logged in to view the profile!')
         return redirect(url_for('index'))
 
+"""
+The editProfile function handles the editing of a users profile. 
+It supports both GET and POST requests. Users must be logged in to access this functionality.
 
+If it receives a GET request: It renders the editProfile.html template.
+
+If it receives a POST request: It performs the same action as a GET request.
+
+Returns: the editProfile.html template if the user is logged in, or redirects to the index page 
+with an error message if the user is not logged in.
+"""
 @app.route('/editProfile/<uid>', methods=["GET", "POST"])
 def editProfile():
     if 'user_id' in session:
@@ -173,7 +212,17 @@ def editProfile():
         flash('You must be logged in to edit the profile!')
         return redirect(url_for('index'))
 
+"""
+The viewChat function handles the display of the chat history. It supports both GET and POST requests. 
+Users must be logged in to access this functionality.
 
+If it receives a GET request: It renders the chat.html template.
+
+If it receives a POST request: It performs the same action as a GET request.
+
+Returns: the chat.html template if the user is logged in, or redirects to the index page 
+with an error message if the user is not logged in.
+"""
 @app.route('/chat/', methods=["GET", "POST"])
 def viewChat():
     if 'user_id' in session:
