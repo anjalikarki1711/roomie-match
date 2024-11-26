@@ -93,7 +93,7 @@ def makePosts():
             else:
                 flash('Budget and max_number of roomates should be integers')
     else:
-        flash('Please log in to continue!') 
+        flash('You must be logged in to make a post!') 
         return redirect(url_for('index'))
 
 @app.route('/pic/<file_id>')
@@ -156,18 +156,32 @@ def viewPosts():
 
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
-    return render_template('viewProfile.html',
+    if 'user_id' in session:
+        return render_template('viewProfile.html',
                            page_title='Profile')
+    else:
+        flash('You must be logged in to view the profile!')
+        return redirect(url_for('index'))
+
 
 @app.route('/editProfile/<uid>', methods=["GET", "POST"])
 def editProfile():
-    return render_template('editProfile.html',
-                           page_title='Edit Profile')
+    if 'user_id' in session:
+        return render_template('editProfile.html',
+                            page_title='Edit Profile')
+    else:
+        flash('You must be logged in to edit the profile!')
+        return redirect(url_for('index'))
+
 
 @app.route('/chat/', methods=["GET", "POST"])
 def viewChat():
-    return render_template('chat.html',
+    if 'user_id' in session:
+        return render_template('chat.html',
                            page_title='Chat History')
+    else:
+        flash('You must be logged in to use the Chat feature!')
+        return redirect(url_for('index'))
 
 
 
