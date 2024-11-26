@@ -96,7 +96,31 @@ def makePosts():
         flash('Please log in to continue!') 
         return redirect(url_for('index'))
 
-    
+@app.route('/pic/<file_id>')
+def pic(file_id):
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    numrows = curs.execute(
+        '''select room_pic_filename from file where file_id = %s''',
+        [file_id])
+    if numrows == 0:
+        flash('No picture for {}'.format(file_id))
+        return redirect(url_for('index'))
+    row = curs.fetchone()
+    return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
+
+# @app.route('/profilepic/<file_id>')
+# def pic(file_id):
+#     conn = dbi.connect()
+#     curs = dbi.dict_cursor(conn)
+#     numrows = curs.execute(
+#         '''select profile_pic_filename from file where file_id = %s''',
+#         [file_id])
+#     if numrows == 0:
+#         flash('No picture for {}'.format(file_id))
+#         return redirect(url_for('index'))
+#     row = curs.fetchone()
+#     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename'])
 
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
@@ -109,9 +133,17 @@ def viewPosts():
         if posts:
             for info in posts:
                 userInfo = homepage.getUser(conn, info['user_id'])
-                info['name'] = userInfo['name']
+                if userInfo['name'] != None:
+                    info['name'] = userInfo['name']
+                else:
+                    info['name'] = "Unknown"
+                # if 'room_pic_filename' in info:
+                #     filename = info['room_pic_filename']                      
                 # print(userInfo)
                 # print(info)
+                # if "room_pic_filename" in info:
+                #     info["room_pic_filename"] = info["room_pic_filename"]
+                print(info["room_pic_filename"])
 
             return render_template('feed.html',
                             page_title='Posts',

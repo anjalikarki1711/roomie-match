@@ -2,11 +2,10 @@
 
 {% block main_content %}
 <h1>Roomie-match</h1>
-
 {% for post in allPosts %}
 
 <div class="post" >
-    <p><img class="profPics" src="{{src}}" alt="profPic"> 
+    <!-- <p><img class="pics" src="{{url_for('pic',file_id=post.file_id)}}" alt="profPic">  -->
         {{post.name}} is looking for {{post.post_type}} </p>
         <p>{{post.post_desc}}</p>
         <ul>
@@ -16,14 +15,13 @@
             <li>Shared Bathroom: {{post.shared_bathroom}}</li>
             <li>Shared Bedroom: {{post.shared_bedroom}}</li>
             <li>Pets Friendly: {{post.ok_with_pets}}</li>
-
-            
+            <li>Picture of the room:</li> 
+            <img class="pics" src="{{url_for('pic',file_id=post.file_id)}}">
         </ul>
         <form method="get" action="{{url_for('viewChat')}}">
         <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
         </form>
-       
+    </p>
 </div>
-<p> </p>
 {% endfor %}
 {% endblock %}
