@@ -144,13 +144,24 @@ input[type=button], input[type=submit] {
     cursor: pointer;
   }
 
-.post{
+/* .post{
     border: 2px solid #007ea9;;
     border-radius: 5px;
     border-radius: 15px;
-    width: fit-content;
-    padding: 10px;
+    /* width: fit-content; */
+    /* padding: 10px;
     align-items: center;
+} */ 
+
+/* Centering posts */
+.post {
+    margin: 20px auto; /* Adds vertical spacing and centers the element */
+    padding: 20px;
+    width: 60%; /* Adjust to control the width of each post */
+    background-color: #ffffff; /* Optional: White background for contrast */
+    border: 1px solid #ddd; /* Optional: Border for visual clarity */
+    border-radius: 10px; /* Optional: Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Subtle shadow for depth */
 }
 
 .newPostFom{
@@ -171,7 +182,22 @@ input[type=button], input[type=submit] {
     cursor: pointer;
   }
 
-  .pics{
+  /* .pics{
     width: 100px;
     height: 100px;
+  } */
+
+  .pics {
+    display: block; /* Centers the image as a block element */
+    margin: 10px auto; /* Centers the image horizontally */
+    max-width: 100%; /* Prevents the image from overflowing the container */
+    height: auto; /* Maintains the aspect ratio */
+    max-height: 300px; /* Limits the height for very large images */
+    object-fit: cover; /* Ensures the image fits nicely in the bounding box */
+    border-radius: 5px; /* Optional: Adds rounded corners */
+    border: 1px solid #ccc; /* Optional: Adds a border */
+}
+
+  .desc{
+    font-weight: bold;
   }

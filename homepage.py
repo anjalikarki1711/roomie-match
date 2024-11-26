@@ -36,7 +36,7 @@ def getPostDetails(conn):
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
     posts = curs.execute('''select post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
-            budget, housing_type, post_type, location, room_pic_filename, file_id from post join file on post.post_id= file.post_id''')
+            budget, housing_type, post_type, location, post_desc, room_pic_filename, file_id from post join file on post.post_id= file.post_id''')
     return curs.fetchall()
 
 def getProfilePic(conn, postId):
