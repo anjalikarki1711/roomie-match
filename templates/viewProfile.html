@@ -15,32 +15,25 @@
 
 <!-- Profile Information Section -->
 <h2>Profile Information</h2>
-<form action="{{ url_for('editProfile') }}" method="POST">
-    <label for="profile_desc">Profile Description:</label>
-    <textarea name="profile_desc" id="profile_desc" rows="4" cols="50">{{ user.profile_desc }}</textarea><br><br>
-
-    <label for="location">Location:</label>
-    <input type="text" name="location" id="location" value="{{ user.location }}"><br><br>
-
-    <label for="hobbies">Hobbies:</label>
-    <input type="text" name="hobbies" id="hobbies" value="{{ user.hobbies }}"><br><br>
-
-    <button type="submit">Save Changes</button>
-</form>
+<div>
+    <p><strong>Name:</strong> {{ user.name }}</p>
+    <p><strong>Gender:</strong> {{ user.gender }}</p>
+    <p><strong>Age:</strong> {{ user.age }}</p>
+    <p><strong>Profession:</strong> {{ user.profession }}</p>
+    <p><strong>Location:</strong> {{ user.location }}</p>
+    <p><strong>Profile Description:</strong> {{ user.profile_desc }}</p>
+    <p><strong>Pets:</strong> {{ user.pets }}</p>
+    <p><strong>Hobbies:</strong> {{ user.hobbies }}</p>
+    <p><strong>Seeking:</strong> {{ user.seeking }}</p>
+</div>
 
 <!-- Change Profile Picture Section -->
 <h2>Change Profile Picture</h2>
 <form action="{{ url_for('upload_profile_pic') }}" method="POST" enctype="multipart/form-data">
-    <input type="file" name="profile_pic" accept="image/*">
+    <!-- Ensure the file input field is named 'file' as expected in the Flask route -->
+    <input type="file" name="file" accept="image/*">
     <button type="submit">Upload Profile Picture</button>
 </form>
-
-<!-- Edit Buttons for Each Section -->
-<div>
-    <a href="{{ url_for('editProfile', uid=user.user_id) }}">
-        <button>Edit Profile</button>
-    </a>
-</div>
 
 <!-- Flash Messages Section -->
 {% with messages = get_flashed_messages() %}
@@ -52,5 +45,12 @@
         </ul>
     {% endif %}
 {% endwith %}
+
+<!-- Edit Buttons for Each Section -->
+<div>
+    <a href="{{ url_for('editProfile', uid=user.user_id) }}">
+        <button>Edit Profile</button>
+    </a>
+</div>
 
 {% endblock %}

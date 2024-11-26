@@ -10,7 +10,6 @@ import cs304dbi as dbi
 def join():
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
-
     
     else: 
         username = request.form.get('user-name')
@@ -30,8 +29,15 @@ def join():
         curs = dbi.cursor(conn)
         try:
             curs.execute('''INSERT INTO login(user_name,hashed_password)
-                            VALUES(%s,%s)''',
+                            VALUES(%s,%s)
+                         RETURNING user_id''',
                         [username, stored])
+            user_id = curs.fetchone()[0]
+
+            # Insert the user_id into the user table
+            curs.execute('''INSERT INTO user(user_id)
+                VALUES(%s)''', [user_id])
+            
             conn.commit()
         except Exception as err:
             flash('That email is tied to an existing account: {}'.format(repr(err)))

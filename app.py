@@ -15,7 +15,6 @@ import homepage as homepage
 import login as login
 from flask import g
 
-
 app.secret_key = ''.join([random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') for _ in range(20)])
 app.config['UPLOADS'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')  # Directory for profile picture uploads
 app.config['MAX_CONTENT_LENGTH'] = 5*1024*1024 # 5 MB
@@ -133,47 +132,37 @@ def viewChat():
     return render_template('chat.html',
                            page_title='Chat History')
 
-
 # Code using login
 @app.route('/profile/', methods=["GET", "POST"])
 def viewProfile():
-    # print('Session in the viewProfile function: ', session)
-    # user_id = session.get('user_id')
-    # if not user_id:
-    #     flash("You must log in to view the profile.")
-    #     return redirect(url_for('login'))
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to view the profile.")
+        return redirect(url_for('login'))
 
-    # # Connect to the database
-    # conn = dbi.connect()
-    # curs = dbi.dict_cursor(conn)
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    
+    # Fetch user information
+    curs.execute('SELECT user_id, name, gender, age, profession, profile_desc, location, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    user = curs.fetchone()
+    
+    # Fetch profile picture
+    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    profile_pic_data = curs.fetchone()
 
-    # # Fetch user information
-    # curs.execute('SELECT user_id, name, profile_desc, location, hobbies FROM user WHERE user_id = %s', [user_id])
-    # user = curs.fetchone()
-    # print (user)
-
-    # if user:
-    #     # Fetch profile picture file name from file table
-    #     print("1 lalala")
-    #     curs.execute('SELECT profile_pic FROM file WHERE user_id = %s', [user_id])
-    #     profile_pic_file = curs.fetchone()
-
-    #     if profile_pic_file:
-    #         # Construct the file path and URL
-    #         profile_pic_path = os.path.join(app.config['UPLOADS'], 'profile_pics', profile_pic_filename)
-    #         if os.path.exists(profile_pic_path):
-    #             profile_pic = f'/pic/{profile_pic_filename}'
-    #             print(f"Profile picture path: {profile_pic_path}")
-    #         else:
-    #             profile_pic = None  # If no picture exists
-    #     else:
-    #         profile_pic = None  # No profile picture in the file table
-
-    #     return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
-
-    # else:
-    #     flash("User not found.")
-    #     return redirect(url_for('index'))
+    if user:
+        if profile_pic_data:
+            profile_pic_filename = profile_pic_data['profile_pic_filename']
+            profile_pic = url_for('pic', file_id=profile_pic_data['file_id'])
+        else:
+            profile_pic = None
+        
+        # Render the profile page after gathering the data
+        return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
+    else:
+        flash("User not found.")
+        return redirect(url_for('index'))
 
 @app.route('/prof_pic/<file_id>')
 def pic(file_id):
@@ -190,70 +179,109 @@ def pic(file_id):
 
 @app.route('/upload-profile-pic/', methods=["POST"])
 def upload_profile_pic():
-    # user_id = session.get('user_id')
-    # if not user_id:
-    #     flash("Please log in to upload a profile picture.")
-    #     return redirect(url_for('viewProfile'))
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to upload a profile picture.")
+        return redirect(url_for('viewProfile'))
 
-    # file = request.files.get('profile_pic')
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
 
-    # if file and file.filename != '':
-    #     print(f"File received: {file.filename}")  # Debug message
-    #     filename = secure_filename(file.filename)
-    #     filepath = os.path.join(app.config['UPLOADS'], filename)
+    # Check if the user already has a profile picture
+    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    existing_file = curs.fetchone()
 
-    #     try:
-    #         os.makedirs(app.config['UPLOADS'], exist_ok=True)
-    #         file.save(filepath)
-    #         print("File saved successfully!")  # Debug message
-    #         # Update the database here if applicable
-    #         flash("Profile picture uploaded successfully!")
-    #         return redirect(url_for('viewProfile'))  # Stop further execution
-    #     except Exception as e:
-    #         print(f"Error saving file: {e}")  # Debugging
-    #         flash("An error occurred while saving the file.")
-    #         return redirect(url_for('viewProfile'))
+    if 'file' not in request.files:
+        flash("No file part.")
+        return redirect(url_for('viewProfile'))
 
-    # # If no file was uploaded or it was invalid
-    # flash("No file selected or invalid file.")
-    # return redirect(url_for('viewProfile'))
+    f = request.files['file']
+    if f.filename == '':
+        flash("No selected file.")
+        return redirect(url_for('viewProfile'))
 
+    filename = secure_filename(f.filename)
+    file_path = os.path.join(app.config['UPLOADS'], filename)
+    f.save(file_path)
 
-
-
-
-    """ if not file:
-        print("No file received in the request")
-    elif file.filename == '':
-        print("File received, but the filename is empty")
-    
-    if file and file.filename != '':
-        # Secure the file name and save it to the uploads directory
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOADS'], filename)
-
-        try:
-            # Save the file
-            file.save(filepath)
-
-            # Store the file name in the database
-            conn = dbi.connect()
-            curs = dbi.dict_cursor(conn)
-            curs.execute('''INSERT INTO file (user_id, profile_pic)
-                            VALUES (%s, %s)
-                            ON DUPLICATE KEY UPDATE profile_pic = %s''',
-                         [user_id, filename, filename])
-            conn.commit()
-
-            flash("Profile picture uploaded successfully!")
-        except Exception as e:
-            flash(f"Error saving the file: {e}")
-            return redirect(url_for('viewProfile'))
+    try:
+        if existing_file:
+            # Update existing profile picture
+            curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
         else:
-            flash("No file selected or invalid file.")
+            # Insert new profile picture record
+            curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+
+        conn.commit()  # Commit changes to the database
+        flash("Profile picture uploaded successfully!")
+    except Exception as e:
+        flash(f"An error occurred while saving the file: {e}")
+        return redirect(url_for('viewProfile'))
 
     return redirect(url_for('viewProfile'))
- """
+
+@app.route('/delete-profile-pic/', methods=["POST"])
+def delete_profile_pic():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to delete your profile picture.")
+        return redirect(url_for('viewProfile'))
+
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+
+    try:
+        # Fetch and delete the file from the file system
+        curs.execute('SELECT profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+        profile_pic_file = curs.fetchone()
+
+        if profile_pic_file:
+            filename = profile_pic_file[0]  # Accessing the filename by index
+            file_path = os.path.join(app.config['UPLOADS'], filename)
+
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+            # Remove the file record from the database
+            curs.execute('DELETE FROM file WHERE user_id = %s', [user_id])
+            conn.commit()  # Commit after deleting the file record
+            flash("Profile picture deleted successfully.")
+        else:
+            flash("No profile picture to delete.")
+    except Exception as e:
+        flash(f"An error occurred while deleting the profile picture: {e}")
+        conn.rollback()  # Rollback in case of an error
+
+    return redirect(url_for('viewProfile'))
+
+
+@app.route('/delete_account/', methods=['POST'])
+def delete_account():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to delete your account.")
+        return redirect(url_for('login'))
+
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+
+    try:
+        # Call delete_profile_pic to remove the profile picture
+        delete_profile_pic()
+
+        # Delete the user's account record from the database
+        curs.execute('DELETE FROM user WHERE user_id = %s', [user_id])
+        curs.execute('DELETE FROM login WHERE user_id = %s', [user_id])
+        conn.commit()
+
+        # Clear the user's session
+        session.clear()
+
+        flash("Account and profile picture deleted successfully.")
+        return redirect(url_for('join'))
+    except Exception as e:
+        flash(f"Error deleting account: {e}")
+        return redirect(url_for('viewProfile'))
 
 @app.route('/edit-profile/', methods=["GET", "POST"])
 def editProfile():
@@ -263,16 +291,22 @@ def editProfile():
         return redirect(url_for('login'))
 
     if request.method == "POST":
-        new_desc = request.form.get('profile_desc')
+        new_name = request.form.get('name')
+        new_gender = request.form.get('gender')
+        new_age = request.form.get('age')
+        new_profession = request.form.get('profession')
         new_location = request.form.get('location')
+        new_desc = request.form.get('profile_desc')
+        new_pets = request.form.get('pets')
         new_hobbies = request.form.get('hobbies')
+        new_seeking = request.form.get('seeking')
 
         conn = dbi.connect()
         curs = dbi.cursor(conn)
 
         try:
-            curs.execute('UPDATE user SET profile_desc = %s, location = %s, hobbies = %s WHERE user_id = %s',
-                         [new_desc, new_location, new_hobbies, user_id])
+            curs.execute('UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s',
+                         [new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id])
             conn.commit()
             flash("Profile updated successfully!")
             return redirect(url_for('viewProfile'))
@@ -282,7 +316,7 @@ def editProfile():
     # Show the form to edit
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
-    curs.execute('SELECT profile_desc, location, hobbies FROM user WHERE user_id = %s', [user_id])
+    curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
     user = curs.fetchone()
 
     return render_template('editProfile.html', user=user)
@@ -332,30 +366,95 @@ def edit_hobbies():
         flash(f"Error updating hobbies: {e}")
     return redirect(url_for('viewProfile'))
 
-@app.route('/delete_account/', methods = ['POST'])
-def delete_account():
-    # Check if the user is logged in
-    if 'logged_in' not in session:
-        flash('You need to log in first.')
-        return redirect(url_for('login'))
-
-    # Establish connection
+@app.route('/edit-name/', methods=["POST"])
+def edit_name():
+    user_id = session.get('user_id')
+    new_name = request.form.get('name')
     conn = dbi.connect()
     curs = dbi.cursor(conn)
-
     try:
-        # Delete user account from the database
-        curs.execute('DELETE FROM userpass WHERE uid = %s', [session['user_id']])
+        curs.execute('UPDATE user SET name = %s WHERE user_id = %s',
+                     [new_name, user_id])
         conn.commit()
+        flash("Name updated successfully!")
+    except Exception as e:
+        flash(f"Error updating name: {e}")
+    return redirect(url_for('viewProfile'))
 
-        # Clear the session
-        session.clear()
-        flash('Your account has been deleted successfully.')
-    except Exception as err:
-        flash(f'Error deleting account: {repr(err)}')
-        return redirect(url_for('profile', username=session['username']))
+@app.route('/edit-gender/', methods=["POST"])
+def edit_gender():
+    user_id = session.get('user_id')
+    new_gender = request.form.get('gender')
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        curs.execute('UPDATE user SET gender = %s WHERE user_id = %s',
+                     [new_gender, user_id])
+        conn.commit()
+        flash("Gender updated successfully!")
+    except Exception as e:
+        flash(f"Error updating gender: {e}")
+    return redirect(url_for('viewProfile'))
 
-    return redirect(url_for('join'))
+@app.route('/edit-age/', methods=["POST"])
+def edit_age():
+    user_id = session.get('user_id')
+    new_age = request.form.get('age')
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        curs.execute('UPDATE user SET age = %s WHERE user_id = %s',
+                     [new_age, user_id])
+        conn.commit()
+        flash("Age updated successfully!")
+    except Exception as e:
+        flash(f"Error updating age: {e}")
+    return redirect(url_for('viewProfile'))
+
+@app.route('/edit-profession/', methods=["POST"])
+def edit_profession():
+    user_id = session.get('user_id')
+    new_profession = request.form.get('profession')
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        curs.execute('UPDATE user SET profession = %s WHERE user_id = %s',
+                     [new_age, user_id])
+        conn.commit()
+        flash("Profession updated successfully!")
+    except Exception as e:
+        flash(f"Error updating profession: {e}")
+    return redirect(url_for('viewProfile'))
+
+@app.route('/edit-pets/', methods=["POST"])
+def edit_pets():
+    user_id = session.get('user_id')
+    new_pets = request.form.get('pets')
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        curs.execute('UPDATE user SET pets = %s WHERE user_id = %s',
+                     [new_pets, user_id])
+        conn.commit()
+        flash("Pets updated successfully!")
+    except Exception as e:
+        flash(f"Error updating pets: {e}")
+    return redirect(url_for('viewProfile'))
+
+@app.route('/edit-seeking/', methods=["POST"])
+def edit_seeking():
+    user_id = session.get('user_id')
+    new_seeking = request.form.get('seeking')
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        curs.execute('UPDATE user SET seeking = %s WHERE user_id = %s',
+                     [new_seeking, user_id])
+        conn.commit()
+        flash("Seeking updated successfully!")
+    except Exception as e:
+        flash(f"Error updating seeking: {e}")
+    return redirect(url_for('viewProfile'))
 
 # Code NOT using login
 # @app.route('/profile/', methods=["GET", "POST"])
