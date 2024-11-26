@@ -8,14 +8,15 @@
 <div class="post" >
     <p><img class="profPics" src="{{src}}" alt="profPic"> 
         {{post.name}} is looking for {{post.post_type}} </p>
-        <p>{{prof_desc}}</p>
+        <p>{{post.post_desc}}</p>
         <ul>
-            <li>Location: {{post.city}}, {{post.state}}</li>
+            <li>Location: {{post.location}}</li>
             <li>Monthly Rent: ${{post.budget}}</li>
             <li>Maximum Number of Roommates Needed: {{post.max_roommates}}</li>
             <li>Shared Bathroom: {{post.shared_bathroom}}</li>
             <li>Shared Bedroom: {{post.shared_bedroom}}</li>
             <li>Pets Friendly: {{post.ok_with_pets}}</li>
+
             
         </ul>
         <form method="get" action="{{url_for('viewChat')}}">

@@ -18,7 +18,7 @@ import cs304dbi as dbi
 
 #for file upload
 app.config['UPLOADS'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 5*1024*1024 # 5 MB
+app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -33,6 +33,8 @@ def index():
     return render_template('home.html',
                            page_title='Home Page')
 
+
+
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
     if 'user_id' in session:
@@ -43,11 +45,7 @@ def makePosts():
         else: 
             conn = dbi.connect()
             curs = dbi.dict_cursor(conn)
-            #use last_inserted_id to get the post id
-            curs.execute('''
-                        select last_insert_id''')
-            pidDict = curs.fetchone()
-            pid = pidDict['last_insert_id()']
+
             #retrieves form data 
             p_type = request.form.get('post_type')
             h_type = request.form.get('housing_type')
@@ -57,24 +55,37 @@ def makePosts():
             sbath = request.form.get('mshared_bathroom')
             pets = request.form.get('ok_with_pets')
             description = request.form.get("descr")
-            f = request.files['pic']
-            user_filename = f.filename
-            ext = user_filename.split('.')[-1]
-            filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
-            pathname = os.path.join(app.config['UPLOADS'],filename)
-            f.save(pathname)
+            pref_location = request.form.get("location")
+            
 
-        #insert into the database
-        #checks wether the inputs are integers
+            #insert into the database
+            #checks wether the inputs are integers
             if homepage.isInt(rent) and homepage.isInt(roommatesNum):
                 curs.execute(
                     '''insert into post(user_id, shared_bathroom, shared_bedroom, 
-                    ok_with_pets, max_roommates, budget, housing_type, post_type) 
-                    values (%s,%s,%s,%s,%s,%s,%s,%s)''',
-                    [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type])
+                    ok_with_pets, max_roommates, budget, housing_type, post_type, post_desc, location) 
+                    values (%s,%s,%s,%s,%s,%s,%s,%s, %s, %s)''',
+                    [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type, description, pref_location])
+                conn.commit()
+                #use last_inserted_id to get the post id
+                curs.execute('''
+                            select last_insert_id() as pid''')
+                pidDict = curs.fetchone()
+                pid = pidDict['pid']
 
+                if not os.path.exists('uploads'):
+                    os.makedirs('uploads')
+
+                if request.files['pic']:
+                    f = request.files['pic']
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    f.save(pathname)
+                
                 curs.execute(
-                    '''insert into file(user_id, post_id, room_pic) values (%s,%s, %s)
+                    '''insert into file(user_id, post_id, room_pic_filename) values (%s,%s, %s)
                         ''', [uid, pid, filename])
                 conn.commit()
                 flash('Post successful')
