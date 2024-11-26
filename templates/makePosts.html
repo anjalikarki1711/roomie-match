@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Make a new post</h1>
+<div class="newPostForm">
+
+  <form method="POST" action="{{url_for('makePosts')}}" enctype="multipart/form-data">
+    
+    <p>
+        <label for="post_type"> What are you looking for: 
+            <select id="post_type" name ="post_type" required>
+                <option value="">select</option>
+                <option value="roommate">roommates(Looking for roommates to join your housing)</option>
+                <option value="housing">housing</option> 
+        </label></select> 
+    </p>
+    
+    <p>
+        <label for="housing_type"> Housing type: 
+            <select id="housing_type" name ="housing_type" required>
+                <option value="">select</option>
+                <option value="long-term-post-grad">Longterm Post-grad</option>
+                <option value="summer">Summer</option>
+                <option value="winter">Winter</option>
+                <option value="short-term">Short-term</option> 
+        </label></select> 
+    </p>
+    
+    <p>
+        <label for="location"> What is your preferred location? 
+            <input required type="location" name="location" id= "location"> 
+        </label> 
+    </p>
+    
+    <p>
+        <label for="budget"> How much is the monthly rent?
+            <input required type="budget" name="budget" id= "budget"> 
+        </label> 
+    </p>
+    
+    <p>
+        <label for="max_roomates"> What is the maximum number of Roommates:
+            <input required type="max_roomates" name="max_roommates" id= "max_roommates"> 
+        </label> 
+    </p>
+    
+    <label for="post_desc">Give a brief description of what you are looking for: <br>
+        <textarea id= "descr" name="descr" rows="3" cols="30" required></textarea>
+    </label>
+    
+    <br>
+    
+    <p>
+        <label for="shared_bathroom"> Does your housing have shared Bathroom: 
+            <select id="shared_bathroom" name ="shared_bathroom" required>
+                <option value="">select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </label>
+    </p>
+    
+    <p>
+        <label for="shared_bedroom"> Does your housing have shared bedroom: 
+            <select id="shared_bedroom" name ="shared_bathroom" required>
+                <option value="">select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </label>
+    </p>
+    
+    <p>
+        <label for="ok_with_pets"> Is this a pets-friendly space: 
+            <select id="ok_with_pets" name ="ok_with_pets" required>
+                <option value="">select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option> 
+            </select>
+        </label> 
+    </p>
+
+    <p>If you already have housing and looking for roommates,
+    upload pictures of your appartment/house:</p>
+    <p>
+        <label>Pic: 
+            <input type="file" name="pic">
+        </label>
+    </p>
+  
+
+    <p>
+        <input type="submit" id="submit" value="Submit"> 
+    </p>
+
+</form>
+</div>
+{% endblock %}
+
+<!-- {% if post_type == 'roommate' %} -->
+   <!-- {% endif %} -->
+
+   <!-- <form method="post" action="{{url_for('makePosts')}}" enctype="multipart/form-data">
+    <p><label>Pic: <input type="file" name="pic"></label></p>
+    <p><input type="submit" value="upload"></p>
+</form> -->

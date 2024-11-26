@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{# replaces default content block #}
+{% block content %}
+<div class="form">
+    <form id="messages-form"
+        method="post"
+        action="/message/{{recipient_uid}}">
+    <h2> Messages </h2>
+    <p><label>Message:
+        <input required type="text" name="message" size="50"></label></p>
+
+    <p><input name="send" type="submit" value="sendMessage"></p>
+
+    </form>
+</div>
+<h2 id="loginButton" class="loginButtons"><a href="url_for('viewPosts')">Back</a></h2>
+
+{% endblock %}

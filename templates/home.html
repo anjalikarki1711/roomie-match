@@ -1,0 +1,19 @@
+<!--Roomie Match team: Anjali Karki, Flora Mukako, Indira Ruslanova, Ali Bichanga-->
+<!--Home page with nav bar-->
+
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Home</h1>
+<h2> Welcome to Roomie Match! Where you connect with roommates and find your place! </h2>
+<div class="loginSignup">
+    <div class="login">
+        <p>New user? Sign up below!</p>
+        <h2 id="signupButton" class="loginButtons"><a href="{{url_for('join')}}">Sign Up</a></h2>
+    </div>
+    <div class="login">
+        <p id="loginButton">Already a user? Login below!</p>
+        <h2 id="loginButton" class="loginButtons"><a href="{{url_for('login')}}">Log In</a></h2>
+    </div>
+</div>
+{% endblock %}
