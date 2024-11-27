@@ -52,6 +52,23 @@ def viewProfile():
         flash("User not found.")
         return redirect(url_for('index'))
 
+@app.route('/prof_pic/<file_id>')
+def pic(file_id):
+    '''
+    Takes in an integer i.e. the file id,
+    Looks up the profile picture's filename associated with the given file_id
+    Returns a web page with the profile picture associated with given file_id'''
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    numrows = curs.execute(
+        '''select profile_pic_filename from file where file_id = %s''',
+        [file_id])
+    if numrows == 0:
+        flash('No picture for {}'.format(file_id))
+        return redirect(url_for('index'))
+    row = curs.fetchone()
+    return send_from_directory(app.config['UPLOADS'],row['profile_pic_filename'])
+
 """
 The upload_profile_pic function handles the uploading of a user’s profile picture. 
 It supports POST requests. Users must be logged in to access this functionality.

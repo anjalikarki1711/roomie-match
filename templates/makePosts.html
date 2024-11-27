@@ -33,13 +33,13 @@
     </p>
     
     <p>
-        <label for="budget"> How much is the monthly rent?
+        <label for="budget"> How much is the monthly rent or your monthly budget?
             <input required type="budget" name="budget" id= "budget"> 
         </label> 
     </p>
     
     <p>
-        <label for="max_roomates"> What is the maximum number of Roommates:
+        <label for="max_roomates"> What is the maximum number of Roommates you are willing to live with?
             <input required type="max_roomates" name="max_roommates" id= "max_roommates"> 
         </label> 
     </p>
@@ -51,7 +51,7 @@
     <br>
     
     <p>
-        <label for="shared_bathroom"> Does your housing have shared Bathroom: 
+        <label for="shared_bathroom"> Does your housing have shared Bathroom or are you willing to share a bathroom? 
             <select id="shared_bathroom" name ="shared_bathroom" required>
                 <option value="">select</option>
                 <option value="yes">Yes</option>
@@ -61,7 +61,7 @@
     </p>
     
     <p>
-        <label for="shared_bedroom"> Does your housing have shared bedroom: 
+        <label for="shared_bedroom"> Does your housing have shared bedroom or are you willing to share a bedroom?
             <select id="shared_bedroom" name ="shared_bathroom" required>
                 <option value="">select</option>
                 <option value="yes">Yes</option>
@@ -71,7 +71,7 @@
     </p>
     
     <p>
-        <label for="ok_with_pets"> Is this a pets-friendly space: 
+        <label for="ok_with_pets"> Is this a pets-friendly space? or are you okay to live in a pet friendly space? 
             <select id="ok_with_pets" name ="ok_with_pets" required>
                 <option value="">select</option>
                 <option value="yes">Yes</option>
@@ -81,10 +81,11 @@
     </p>
 
     <p>If you already have housing and looking for roommates,
-    upload pictures of your appartment/house:</p>
+    upload pictures of your appartment/house or <br>
+    If you are seeking a room, upload what your ideal room looks like:</p>
     <p>
         <label>Pic: 
-            <input type="file" name="pic">
+            <input type="file" name="pic" required>
         </label>
     </p>
   
