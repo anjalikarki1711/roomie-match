@@ -6,6 +6,18 @@ from __main__ import app
 import bcrypt
 import cs304dbi as dbi
 
+"""
+The join function handles the user registration process. It supports both GET and POST requests.
+
+If it receives a GET request: It renders the sign-up.html template.
+
+If it receives a POST request: It retrieves the username and password from the form. 
+If the passwords do not match, it displays an error message and redirects to the sign-up page. 
+If the passwords match, it hashes the password and stores the user information in the database. 
+It then creates a new user session and redirects to the profile view page.
+
+Returns: The sign-up.html template if the request method is GET, or redirects to the profile view page after successful registration.
+"""
 @app.route('/sign-up/', methods=["GET", "POST"])
 def join():
     if request.method == "GET":
@@ -53,6 +65,18 @@ def join():
         session['visits'] = 1
         return redirect( url_for('viewProfile' ) ) #, username=username) )
 
+"""
+The login function handles the user login process. It supports both GET and POST requests.
+
+If it receives a GET request: It renders the login.html template.
+
+If it receives a POST request: It retrieves the username and password from the form. It then checks the database 
+for the user and verifies the password. If the login is successful, it creates a new user session and redirects to 
+the profile view page. If the login fails, it displays an error message and redirects to the login page.
+
+Returns: The login.html template if the request method is GET, or redirects to the profile view page after successful login.
+
+"""
 @app.route('/login/', methods=["GET", "POST"])
 def login():
     if request.method == "GET":
@@ -92,7 +116,14 @@ def login():
         else:
             flash('password incorrect. Try again or join')
             return redirect( url_for('join'))
-        
+"""
+The logout function handles the user logout process. It supports GET requests.
+
+If it receives a GET request: It checks if the user is logged in. If the user is logged in, 
+it clears the user session and displays a success message. If the user is not logged in, it displays an error message.
+
+Returns: A redirect to the index page after processing the logout.
+"""     
 @app.route('/logout/')
 def logout():
     if 'username' in session:

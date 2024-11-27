@@ -7,6 +7,16 @@ import datetime
 #import bcrypt
 import cs304dbi as dbi
 
+"""
+This function handles sending messages.
+Input: recipient user id
+It renders the message page for GET requests. For POST requests, it retrieves the message from the form, 
+gets the senders user ID from the session, records the current timestamp, inserts the message details into the database, 
+and displays a confirmation message.
+
+Returns: For GET requests: Renders the messages.html template with the page title “Message” and the recipients user ID.
+For POST requests: Inserts the message into the database and renders the messages.html template with a confirmation message.
+"""
 @app.route('/message/<recipient_uid>', methods=["GET", "POST"])
 def sendMessage(recipient_uid):
     if request.method == "GET":
