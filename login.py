@@ -22,10 +22,7 @@ Returns: The sign-up.html template if the request method is GET, or redirects to
 def join():
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
-<<<<<<< HEAD
     
-=======
->>>>>>> anjali
     else: 
         username = request.form.get('user-name')
         passwd1 = request.form.get('password1')

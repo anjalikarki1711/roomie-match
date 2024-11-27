@@ -12,7 +12,9 @@ import sys, os
 import homepage as homepage
 import login as login
 import profile as profile
+import secrets
 from flask import g
+
 
 
 
@@ -30,13 +32,6 @@ app.secret_key = secrets.token_hex()
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
 
-
-@app.before_request
-def start():
-    # Only initialize once using a flag stored in 'g'
-    if not hasattr(g, 'initialized'):
-        dbi.cache_cnf()
-        g.initialized = True
 """
 This route directs users to the homepage where they can choose to either login or sign up to this app
 Returns: the template home.html
