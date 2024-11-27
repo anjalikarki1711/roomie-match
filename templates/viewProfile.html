@@ -1,6 +1,56 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<h1> Profile Feature coming soon! </h1>
+
+<h1>{{ page_title }}</h1>
+
+<!-- Display Profile Picture -->
+<div>
+    {% if profile_pic %}
+        <img src="{{ profile_pic }}" alt="Profile Picture" width="100" height="100">
+    {% else %}
+        <p>No profile picture uploaded.</p>
+    {% endif %}
+</div>
+
+<!-- Profile Information Section -->
+<h2>Profile Information</h2>
+<div>
+    <p><strong>Name:</strong> {{ user.name }}</p>
+    <p><strong>Gender:</strong> {{ user.gender }}</p>
+    <p><strong>Age:</strong> {{ user.age }}</p>
+    <p><strong>Profession:</strong> {{ user.profession }}</p>
+    <p><strong>Location:</strong> {{ user.location }}</p>
+    <p><strong>Profile Description:</strong> {{ user.profile_desc }}</p>
+    <p><strong>Pets:</strong> {{ user.pets }}</p>
+    <p><strong>Hobbies:</strong> {{ user.hobbies }}</p>
+    <p><strong>Seeking:</strong> {{ user.seeking }}</p>
+</div>
+
+<!-- Change Profile Picture Section -->
+<h2>Change Profile Picture</h2>
+<form action="{{ url_for('upload_profile_pic') }}" method="POST" enctype="multipart/form-data">
+    <!-- Ensure the file input field is named 'file' as expected in the Flask route -->
+    <input type="file" name="file" accept="image/*">
+    <button type="submit">Upload Profile Picture</button>
+</form>
+
+<!-- Flash Messages Section -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+<!-- Edit Buttons for Each Section -->
+<div>
+    <a href="{{ url_for('editProfile', uid=user.user_id) }}">
+        <button>Edit Profile</button>
+    </a>
+</div>
 
 {% endblock %}

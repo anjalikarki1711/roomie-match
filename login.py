@@ -10,8 +10,6 @@ import cs304dbi as dbi
 def join():
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
-
-    
     else: 
         username = request.form.get('user-name')
         passwd1 = request.form.get('password1')
@@ -19,6 +17,10 @@ def join():
         if passwd1 != passwd2:
             flash('passwords do not match')
             return redirect( url_for('join'))
+        if '@wellesley.edu' not in username:
+            flash('Please use your Wellesley email!')
+            return redirect( url_for('join'))
+
         
         hashed = bcrypt.hashpw(passwd1.encode('utf-8'),
                             bcrypt.gensalt())
