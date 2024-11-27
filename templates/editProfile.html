@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block main_content %}
+    <h1>Welcome, {{ username }}</h1>
+
+    <h1>Edit Profile</h1>
+
+    <!-- Consolidated form for all profile fields -->
+    <form action="{{ url_for('editProfile') }}" method="post">
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="{{ user.name }}" required>
+        </div><br>
+
+        <div>
+            <label for="gender">Gender:</label>
+            <input type="text" name="gender" id="gender" value="{{ user.gender }}" required>
+        </div><br>
+
+        <div>
+            <label for="age">Age:</label>
+            <input type="text" name="age" id="age" value="{{ user.age }}" required>
+        </div><br>
+
+        <div>
+            <label for="profession">Profession:</label>
+            <input type="text" name="profession" id="profession" value="{{ user.profession }}" required>
+        </div><br>
+
+        <div>
+            <label for="location">Location:</label>
+            <input type="text" name="location" id="location" value="{{ user.location }}" required>
+        </div><br>
+
+        <div>
+            <label for="profile_desc">Profile Description:</label>
+            <textarea name="profile_desc" id="profile_desc" rows="4" cols="50" required>{{ user.profile_desc }}</textarea>
+        </div><br>
+
+        <div>
+            <label for="pets">Pets:</label>
+            <input type="text" name="pets" id="pets" value="{{ user.pets }}" required>
+        </div><br>
+
+        <div>
+            <label for="hobbies">Hobbies:</label>
+            <input type="text" name="hobbies" id="hobbies" value="{{ user.hobbies }}" required>
+        </div><br>
+
+        <div>
+            <label for="seeking">Seeking:</label>
+            <input type="text" name="seeking" id="seeking" value="{{ user.seeking }}" required>
+        </div><br>
+
+        <!-- Save Changes button for all fields -->
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('delete_account') }}">
+        <button type="submit">Delete Account</button>
+    </form>
+    
+{% endblock %}

@@ -10,7 +10,6 @@ import cs304dbi as dbi
 def join():
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
-
     
     else: 
         username = request.form.get('user-name')
