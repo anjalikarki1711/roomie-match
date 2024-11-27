@@ -15,9 +15,6 @@ import profile as profile
 import secrets
 from flask import g
 
-
-
-
 #for file upload
 app.config['UPLOADS'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB

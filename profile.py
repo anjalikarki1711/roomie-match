@@ -10,13 +10,17 @@ import homepage as homepage
 import login as login
 from flask import g
 
+"""
+This function looks up a profile picture based on it's file id and returns a webpage with the profile picture associated with that id.
 
+Input: file id
+
+It executes a query that gets a given file name based on a file id. It then gets the picture associated with the given filename.
+
+Return: A specifi profile picture
+"""
 @app.route('/prof_pic/<file_id>')
 def pic(file_id):
-    '''
-    Takes in an integer i.e. the file id,
-    Looks up the profile picture's filename associated with the given file_id
-    Returns a web page with the profile picture associated with given file_id'''
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
     numrows = curs.execute(
