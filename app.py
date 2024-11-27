@@ -1,3 +1,5 @@
+##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -5,23 +7,27 @@ app = Flask(__name__)
 
 
 from werkzeug.utils import secure_filename
-import secrets
+import cs304dbi as dbi
+import sys, os
 import homepage as homepage
 import login as login
-
-import cs304dbi as dbi
-
+import profile as profile
+import secrets
+from flask import g
 
 #for file upload
 app.config['UPLOADS'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
+# Directory for profile picture uploads
+app.config['UPLOADS1'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')  
+
 
 app.secret_key = 'your secret here'
-# replace that with a random key
 app.secret_key = secrets.token_hex()
 
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
+
 
 """
 This route directs users to the homepage where they can choose to either login or sign up to this app
@@ -29,6 +35,7 @@ Returns: the template home.html
 """
 @app.route('/')
 def index():
+    '''Route for rendering the home page'''
     return render_template('home.html',
                            page_title='Home Page')
 
@@ -45,6 +52,10 @@ It returns the makePosts.html from a GET request and it redirects to the viewPos
 """
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
+    '''
+    Takes no parameter, 
+    Allows users to create and submit a post and renders the feedpage
+    '''
     if 'user_id' in session:
         uid = session['user_id']
         if request.method == 'GET':
@@ -105,7 +116,7 @@ def makePosts():
         return redirect(url_for('index'))
 
 """
-The pic function handles the retrieval and display of a picture associated with a given file ID. 
+The roompic function handles the retrieval and display of a picture associated with a given file ID. 
 
 Input: Users must provide a valid file_id.
 
@@ -115,8 +126,11 @@ If a picture is found, it sends the file from the uploads directory.
 
 Returns: the picture file from the uploads directory if found, or redirects to the index page if no picture is found.
 """
-@app.route('/pic/<file_id>')
-def pic(file_id):
+@app.route('/roompic/<file_id>')
+def roompic(file_id):
+    '''Takes an integer i.e. the file id number,
+    Retrieves the room picture's filename with given file id,
+    Returns a web page containing the room picture with given id'''
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
     numrows = curs.execute(
@@ -143,6 +157,9 @@ or redirects to the index page with an error message if the user is not logged i
 """
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
+    '''Takes no parameter,
+    Allows user to view the feed with posts made by all users,
+    Returns the feed webpage'''
     #Only allow logged in users to view the feed
     if 'user_id' in session:
         conn = dbi.connect()
@@ -156,14 +173,6 @@ def viewPosts():
                     info['name'] = userInfo['name']
                 else:
                     info['name'] = "Unknown"
-                # if 'room_pic_filename' in info:
-                #     filename = info['room_pic_filename']                      
-                # print(userInfo)
-                # print(info)
-                # if "room_pic_filename" in info:
-                #     info["room_pic_filename"] = info["room_pic_filename"]
-                print(info["room_pic_filename"])
-
             return render_template('feed.html',
                             page_title='Posts',
                             allPosts = posts)
@@ -171,46 +180,7 @@ def viewPosts():
     else:
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
-    
-"""
-The viewProfile function handles the display of the user’s profile. It supports both GET and POST requests. 
-Users must be logged in to access this functionality.
-
-If it receives a GET request: It renders the viewProfile.html template.
-
-If it receives a POST request: It performs the same action as a GET request.
-
-Returns: the viewProfile.html template if the user is logged in, or redirects to the index page 
-with an error message if the user is not logged in.
-"""
-@app.route('/profile/', methods=["GET", "POST"])
-def viewProfile():
-    if 'user_id' in session:
-        return render_template('viewProfile.html',
-                           page_title='Profile')
-    else:
-        flash('You must be logged in to view the profile!')
-        return redirect(url_for('index'))
-
-"""
-The editProfile function handles the editing of a users profile. 
-It supports both GET and POST requests. Users must be logged in to access this functionality.
-
-If it receives a GET request: It renders the editProfile.html template.
-
-If it receives a POST request: It performs the same action as a GET request.
-
-Returns: the editProfile.html template if the user is logged in, or redirects to the index page 
-with an error message if the user is not logged in.
-"""
-@app.route('/editProfile/<uid>', methods=["GET", "POST"])
-def editProfile():
-    if 'user_id' in session:
-        return render_template('editProfile.html',
-                            page_title='Edit Profile')
-    else:
-        flash('You must be logged in to edit the profile!')
-        return redirect(url_for('index'))
+#######################################################################################################################
 
 """
 The viewChat function handles the display of the chat history. It supports both GET and POST requests. 
@@ -225,15 +195,14 @@ with an error message if the user is not logged in.
 """
 @app.route('/chat/', methods=["GET", "POST"])
 def viewChat():
+    '''Shows the user's chat history and people - yet to be implemented'''
     if 'user_id' in session:
         return render_template('chat.html',
                            page_title='Chat History')
     else:
         flash('You must be logged in to use the Chat feature!')
         return redirect(url_for('index'))
-
-
-
+###################################################################################################################
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:
