@@ -260,7 +260,8 @@ def delete_profile_pic():
 
     try:
         # Fetch and delete the file from the file system
-        curs.execute('SELECT profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+        curs.execute('''SELECT profile_pic_filename 
+                     FROM file WHERE user_id = %s''', [user_id])
         profile_pic_file = curs.fetchone()
 
         if profile_pic_file:
