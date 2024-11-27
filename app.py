@@ -4,41 +4,25 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
 
-<<<<<<< HEAD
 from werkzeug.utils import secure_filename
-=======
 import cs304dbi as dbi
 import sys, os, random
 import bcrypt
->>>>>>> indira
 import secrets
-from werkzeug.utils import secure_filename
 import homepage as homepage
 import login as login
 from flask import g
 
-<<<<<<< HEAD
-import cs304dbi as dbi
 
 
 #for file upload
 app.config['UPLOADS'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
-=======
-app.secret_key = ''.join([random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') for _ in range(20)])
-app.config['UPLOADS'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')  # Directory for profile picture uploads
-app.config['MAX_CONTENT_LENGTH'] = 5*1024*1024 # 5 MB
->>>>>>> indira
 
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
-<<<<<<< HEAD
-"""
-This route directs users to the homepage where they can choose to either login or sign up to this app
-Returns: the template home.html
-"""
-=======
+
 
 """ @app.route('/test-login')
 def test_login():
@@ -53,8 +37,10 @@ def start():
     if not hasattr(g, 'initialized'):
         dbi.cache_cnf()
         g.initialized = True
-
->>>>>>> indira
+"""
+This route directs users to the homepage where they can choose to either login or sign up to this app
+Returns: the template home.html
+"""
 @app.route('/')
 def index():
     return render_template('home.html',
@@ -132,7 +118,6 @@ def makePosts():
         flash('You must be logged in to make a post!') 
         return redirect(url_for('index'))
 
-<<<<<<< HEAD
 """
 The pic function handles the retrieval and display of a picture associated with a given file ID. 
 
@@ -170,8 +155,6 @@ If it receives a POST request: It performs the same actions as a GET request.
 Returns: the feed.html template with the list of posts if the user is logged in, 
 or redirects to the index page with an error message if the user is not logged in.
 """
-=======
->>>>>>> indira
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
     #Only allow logged in users to view the feed
@@ -202,7 +185,6 @@ def viewPosts():
     else:
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
-<<<<<<< HEAD
     
 """
 The viewProfile function handles the display of the user’s profile. It supports both GET and POST requests. 
@@ -216,10 +198,6 @@ Returns: the viewProfile.html template if the user is logged in, or redirects to
 with an error message if the user is not logged in.
 """
 @app.route('/profile/', methods=["GET", "POST"])
-=======
-
-""" @app.route('/profile/', methods=["GET", "POST"])
->>>>>>> indira
 def viewProfile():
     if 'user_id' in session:
         return render_template('viewProfile.html',
@@ -241,7 +219,6 @@ with an error message if the user is not logged in.
 """
 @app.route('/editProfile/<uid>', methods=["GET", "POST"])
 def editProfile():
-<<<<<<< HEAD
     if 'user_id' in session:
         return render_template('editProfile.html',
                             page_title='Edit Profile')
@@ -254,10 +231,6 @@ The viewChat function handles the display of the chat history. It supports both 
 Users must be logged in to access this functionality.
 
 If it receives a GET request: It renders the chat.html template.
-=======
-    return render_template('editProfile.html',
-                           page_title='Edit Profile') """
->>>>>>> indira
 
 If it receives a POST request: It performs the same action as a GET request.
 
