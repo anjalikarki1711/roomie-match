@@ -138,6 +138,6 @@ def logout():
         flash('You are logged out')
         return redirect(url_for('index'))
     else:
-        flash('you are not logged in. Please login or join')
+        #flash('you are not logged in. Please login or join')
         return redirect( url_for('index') )
     
