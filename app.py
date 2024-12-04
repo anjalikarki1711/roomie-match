@@ -13,7 +13,7 @@ import homepage as homepage
 import login as login
 import profile as profile
 import secrets
-from flask import g
+import datetime
 
 #for file upload
 app.config['UPLOADS'] = 'uploads'
@@ -168,6 +168,13 @@ def viewPosts():
     
         if posts:
             for info in posts:
+                posted_time = info['posted_time']
+                current_time = datetime.datetime.now()
+                time_diff = (current_time - posted_time)
+                daysago = time_diff.days
+                if daysago < 1:
+                    info['time_diff'] = '< 1'
+                info['time_diff'] = daysago
                 userInfo = homepage.getUser(conn, info['user_id'])
                 if userInfo['name'] != None:
                     info['name'] = userInfo['name']

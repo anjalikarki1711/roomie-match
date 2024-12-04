@@ -10,6 +10,8 @@ app = Flask(__name__)
 
 # one or the other of these. Defaults to MySQL (PyMySQL)
 # change comment characters to switch to SQLite
+import datetime
+
 
 
 # import cs304dbi_sqlite3 as dbi
@@ -43,12 +45,12 @@ shared bathroom, shared bedroom, pet preferences, maximum roommates, budget, hou
 post type, location, post description, room picture filename, and file ID.
 
 """
-def getPostDetails(conn, location):
+def getPostDetails(conn):
     '''gets post details from the database'''
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
     posts = curs.execute('''select post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
-            budget, housing_type, post_type, location, post_desc, room_pic_filename, 
+            budget, housing_type, post_type, location, post_desc, posted_time, room_pic_filename, 
             file_id from post join file on post.post_id= file.post_id order by posted_time desc''')
     return curs.fetchall()
 
@@ -101,3 +103,10 @@ def isInt(var):
         return True
     except ValueError:
         return False
+
+def getlocation(conn, id):
+    curs = dbi.dict_cursor(conn)
+    locations = curs.execute(''' select distinct location from post where location is not NULL 
+                       ''')
+    return locations
+

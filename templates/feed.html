@@ -6,8 +6,8 @@
 
 <div class="post" >
     <!-- <p><img class="pics" src="{{url_for('pic',file_id=post.file_id)}}" alt="profPic">  -->
-        {{post.name}} is looking for {{post.post_type}}! </p>
-        <p class="desc">Post Description: {{post.post_desc or "No description"}}</p>
+        <p> {{post.name}} is looking for {{post.post_type}}! </p>
+        <p class="desc">Post Description: {{post.post_desc or "No description"}}. </p>
         <ul>
             <li>Location: {{post.location}}</li>
             <li>Monthly Rent: ${{post.budget}}</li>
@@ -18,10 +18,10 @@
             <li>Picture of the room:</li> 
             <img class="pics" src="{{url_for('roompic',file_id=post.file_id)}}">
         </ul>
+        <p style="font-size: x-small;"> Posted <i>{{post.time_diff}} day(s) ago</i> </p>
         <form method="get" action="{{url_for('viewChat')}}">
         <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
         </form>
-    </p>
 </div>
 {% endfor %}
 {% endblock %}
