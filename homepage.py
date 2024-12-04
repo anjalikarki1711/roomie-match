@@ -43,12 +43,13 @@ shared bathroom, shared bedroom, pet preferences, maximum roommates, budget, hou
 post type, location, post description, room picture filename, and file ID.
 
 """
-def getPostDetails(conn):
+def getPostDetails(conn, location):
     '''gets post details from the database'''
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
     posts = curs.execute('''select post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
-            budget, housing_type, post_type, location, post_desc, room_pic_filename, file_id from post join file on post.post_id= file.post_id''')
+            budget, housing_type, post_type, location, post_desc, room_pic_filename, 
+            file_id from post join file on post.post_id= file.post_id order by posted_time desc''')
     return curs.fetchall()
 
 """
