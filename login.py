@@ -10,7 +10,6 @@ import cs304dbi as dbi
 def join():
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
-    
     else: 
         username = request.form.get('user-name')
         passwd1 = request.form.get('password1')
@@ -18,6 +17,10 @@ def join():
         if passwd1 != passwd2:
             flash('passwords do not match')
             return redirect( url_for('join'))
+        if '@wellesley.edu' not in username:
+            flash('Please use your Wellesley email!')
+            return redirect( url_for('join'))
+
         
         hashed = bcrypt.hashpw(passwd1.encode('utf-8'),
                             bcrypt.gensalt())
@@ -36,7 +39,8 @@ def join():
 
             # Insert the user_id into the user table
             curs.execute('''INSERT INTO user(user_id)
-                VALUES(%s)''', [user_id])
+                VALUES(%s)''',
+             [user_id])
             
             conn.commit()
         except Exception as err:
@@ -50,7 +54,7 @@ def join():
         session['uid'] = uid
         session['logged_in'] = True
         session['visits'] = 1
-        return redirect( url_for('viewProfile' ) ) #, username=username) )
+        return redirect( url_for('login' ) ) #, username=username) )
 
 @app.route('/login/', methods=["GET", "POST"])
 def login():

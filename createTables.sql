@@ -74,4 +74,3 @@ MODIFY COLUMN post_id int not null auto_increment;
 
 
 
-
