@@ -121,6 +121,7 @@ def viewPosts():
     Returns the feed webpage'''
     #Only allow logged in users to view the feed
     if 'user_id' in session:
+        user_id = session.get('user_id')
         conn = dbi.connect()
         posts = homepage.getPostDetails(conn)
         print(posts)
@@ -134,11 +135,55 @@ def viewPosts():
                     info['name'] = "Unknown"
             return render_template('feed.html',
                             page_title='Posts',
-                            allPosts = posts)
+                            allPosts = posts,
+                            current_user_id = user_id)
     #If they are not logged in, redirect to log in page with a message
     else:
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
+    
+@app.route('/delete-post/<post_id>', methods=["GET", "POST"])
+def delete_post(post_id):
+    '''
+    Allows users to delete a post
+    '''
+    print(f"Deleting post with ID: {post_id}")
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to continue")
+        return redirect(url_for('index'))
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        # Fetch and delete the file from the file system
+        curs.execute('''SELECT room_pic_filename from file 
+                     WHERE post_id = %s''', [post_id])
+        pic = curs.fetchone()
+
+        if pic:
+            filename = pic[0]  # Accessing the filename by index
+            file_path = os.path.join(app.config['UPLOADS'], filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            # Remove the file record from the database
+            curs.execute('''delete from file where post_id = %s''', [post_id])
+            conn.commit()  # Commit after deleting the file record
+
+            curs.execute('''select * from post where post_id = %s''', [post_id])
+            post = curs.fetchone()
+            if post:
+                # Remove the file record from the database
+                curs.execute('''delete from post where post_id = %s''', [post_id])
+                conn.commit()  # Commit after deleting the file record
+
+            flash("Post deleted successfully.")
+        else:
+            flash("No post to delete.")
+    except Exception as e:
+        flash(f"An error occurred while deleting the post: {e}")
+        conn.rollback()  # Rollback in case of an error
+
+    return redirect(url_for('viewPosts'))
 #######################################################################################################################
 
 # Code related to profile feature
