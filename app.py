@@ -175,7 +175,7 @@ def viewProfile():
             profile_pic = None
         
         # Render the profile page after gathering the data
-        return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
+        return render_template('viewProfile.html', user=user, profile_pic=profile_pic, page_title="Profile")
     else:
         flash("User not found.")
         return redirect(url_for('index'))
@@ -355,7 +355,7 @@ def editProfile():
                  FROM user WHERE user_id = %s''', [user_id])
     user = curs.fetchone()
 
-    return render_template('editProfile.html', user=user)
+    return render_template('editProfile.html', user=user, page_title="Edit Profile")
 
 @app.route('/edit-profile-desc/', methods=["POST"])
 def edit_profile_desc():

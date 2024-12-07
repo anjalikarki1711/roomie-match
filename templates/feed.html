@@ -16,7 +16,7 @@
             <li>Shared Bedroom: {{post.shared_bedroom}}</li>
             <li>Pets Friendly: {{post.ok_with_pets}}</li>
             <li>Picture of the room:</li> 
-            <img class="pics" src="{{url_for('roompic',file_id=post.file_id)}}">
+            <img class="pics" src="{{url_for('roompic',file_id=post.file_id)}}" alt="{{post.file_id}}">
         </ul>
         <form method="get" action="{{url_for('viewChat')}}">
         <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
