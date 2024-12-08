@@ -64,6 +64,11 @@
     </form>
 
     <form method="POST" action="{{ url_for('delete_account') }}">
+        <label>
+            <input type="checkbox" name="confirm_delete" value="yes" required>
+            I understand that this action cannot be undone.
+        </label>
+        <br>
         <button type="submit">Delete Account</button>
     </form>
     
