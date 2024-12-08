@@ -1,4 +1,4 @@
-from flask import (Flask, render_template, make_response, url_for, request,
+from flask import (render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
 from __main__ import app
@@ -9,6 +9,7 @@ import os
 import homepage as homepage
 import login as login
 from flask import g
+import queries as q
 
 """
 This function looks up a profile picture based on it's file id and returns a webpage with the profile picture associated with that id.
@@ -17,19 +18,17 @@ Input: file id
 
 It executes a query that gets a given file name based on a file id. It then gets the picture associated with the given filename.
 
-Return: A specifi profile picture
+Return: A specific profile picture
 """
 @app.route('/prof_pic/<file_id>')
 def pic(file_id):
     conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
-    numrows = curs.execute(
-        '''select profile_pic_filename from file where file_id = %s''',
-        [file_id])
-    if numrows == 0:
+    #curs = dbi.dict_cursor(conn)
+    row = q.getFile(conn, file_id)
+    if row == 0:
         flash('No picture for {}'.format(file_id))
         return redirect(url_for('index'))
-    row = curs.fetchone()
+    #row = curs.fetchone()
     return send_from_directory(app.config['UPLOADS'],row['profile_pic_filename'])
 
 
@@ -52,15 +51,17 @@ def viewProfile():
         return redirect(url_for('login'))
 
     conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
+    #curs = dbi.dict_cursor(conn)
     
     # Fetch user information
-    curs.execute('SELECT user_id, name, gender, age, profession, profile_desc, location, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
-    user = curs.fetchone()
+    #curs.execute('SELECT user_id, name, gender, age, profession, profile_desc, location, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    #user = curs.fetchone()
+    user = q.getUserInfo(conn, user_id)
     
     # Fetch profile picture
-    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
-    profile_pic_data = curs.fetchone()
+    #curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    #profile_pic_data = curs.fetchone()
+    profile_pic_data = q.getProfpic(conn, user_id)
 
     if user:
         if profile_pic_data:
@@ -98,11 +99,11 @@ def upload_profile_pic():
         return redirect(url_for('viewProfile'))
 
     conn = dbi.connect()
-    curs = dbi.cursor(conn)
+    #curs = dbi.cursor(conn)
 
     # Check if the user already has a profile picture
-    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
-    existing_file = curs.fetchone()
+    #curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    existing_file = q.getProfpic(conn, user_id) #curs.fetchone()
 
     if 'file' not in request.files:
         flash("No file part.")
@@ -120,13 +121,17 @@ def upload_profile_pic():
     try:
         if existing_file:
             # Update existing profile picture
-            curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
+            #curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
+            q.updateProfPic(conn, filename, user_id)
+            flash("Profile picture updated successfully!")
         else:
             # Insert new profile picture record
-            curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+            #curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+            q.insertProfPic(conn, filename, user_id)
+            flash("Profile picture uploaded successfully!")
 
-        conn.commit()  # Commit changes to the database
-        flash("Profile picture uploaded successfully!")
+        #conn.commit()  # Commit changes to the database
+        #flash("Profile picture uploaded successfully!")
     except Exception as e:
         flash(f"An error occurred while saving the file: {e}")
         return redirect(url_for('viewProfile'))

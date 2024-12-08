@@ -11,7 +11,7 @@ import cs304dbi as dbi
 import sys, os
 import homepage as homepage
 import login as login
-import profile as profile
+import profileInfo as profileInfo
 import secrets
 from flask import g
 
