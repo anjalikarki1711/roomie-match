@@ -142,6 +142,20 @@ def roompic(file_id):
     row = curs.fetchone()
     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
 
+def addPostDetails (conn, posts):
+    for info in posts:
+                posted_time = info['posted_time']
+                current_time = datetime.datetime.now()
+                time_diff = (current_time - posted_time)
+                daysago = time_diff.days
+                info['time_diff'] = '< 1' if daysago < 1 else daysago
+                userInfo = homepage.getUser(conn, info['user_id'])
+                if userInfo['name'] != None:
+                    info['name'] = userInfo['name']
+                else:
+                    info['name'] = "Unknown"
+    return posts
+    
 """
 The viewPosts function handles the display of posts in the feed. 
 It supports both GET and POST requests. Users must be logged in to access this functionality.
@@ -177,12 +191,13 @@ def viewPosts():
 
 
         if request.method == 'GET':
+            postNew = addPostDetails(conn, posts)
             return render_template('feed.html',
                                 page_title='Posts',
-                                allPosts = posts,
+                                allPosts = postNew,
                                 options = h_options
                                 )
-        if request.method == "POST":
+        if request.method == "POST" or request.method == "GET":
             filter = request.form.get('filter')
             if filter == "both":
                 posts = homepage.getPostDetails(conn)
@@ -191,26 +206,16 @@ def viewPosts():
             else:
                 posts= homepage.filterPostDetails(conn, filter)
             print(posts)
-            if posts:
-                for info in posts:
-                    posted_time = info['posted_time']
-                    current_time = datetime.datetime.now()
-                    time_diff = (current_time - posted_time)
-                    daysago = time_diff.days
-                    info['time_diff'] = '< 1' if daysago < 1 else daysago
-                    userInfo = homepage.getUser(conn, info['user_id'])
-                    if userInfo['name'] != None:
-                        info['name'] = userInfo['name']
-                    else:
-                        info['name'] = "Unknown"
-                return render_template('feed.html',
-                                page_title='Posts',
-                                allPosts = posts,
-                                h_needs = h_need,
-                                options = h_options)
+        if posts:
+            postNew = addPostDetails(conn, posts)
+            return render_template('feed.html',
+                            page_title='Posts',
+                            allPosts = postNew,
+                            h_needs = h_need,
+                            options = h_options)
 
-            flash('No posts available') 
-            return redirect(url_for('viewPosts'))
+        flash('No posts available') 
+        return redirect(url_for('viewPosts'))
 
     #If they are not logged in, redirect to log in page with a message
     else:

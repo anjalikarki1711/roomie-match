@@ -154,3 +154,4 @@ def filterPostDetails(conn, housing_need):
             budget, housing_type, post_type, location, post_desc, posted_time, room_pic_filename, 
             file_id from post join file on post.post_id= file.post_id where post.post_type = %s order by posted_time desc''', [housing_need])
     return curs.fetchall()
+
