@@ -35,7 +35,7 @@ def getPostDetails(conn):
     '''gets post details from the database'''
     conn = dbi.connect()
     curs = dbi.dict_cursor(conn)
-    posts = curs.execute('''select post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
+    posts = curs.execute('''select post.post_id, post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
             budget, housing_type, post_type, location, post_desc, room_pic_filename, file_id from post join file on post.post_id= file.post_id''')
     return curs.fetchall()
 

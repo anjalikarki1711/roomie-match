@@ -8,6 +8,8 @@
     <!-- <p><img class="pics" src="{{url_for('pic',file_id=post.file_id)}}" alt="profPic">  -->
         {{post.name}} is looking for {{post.post_type}}! </p>
         <p class="desc">Post Description: {{post.post_desc or "No description"}}</p>
+        <p>Post ID: {{ post.post_id }}</p>
+        <p>Generated URL: {{ url_for('delete_post', post_id=post.post_id) }}</p>
         <ul>
             <li>Location: {{post.location}}</li>
             <li>Monthly Rent: ${{post.budget}}</li>

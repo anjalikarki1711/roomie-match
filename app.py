@@ -145,9 +145,10 @@ def viewPosts():
 @app.route('/delete-post/<post_id>', methods=["GET", "POST"])
 def delete_post(post_id):
     '''
-    Allows users to delete a post
+    Takes an integer i.e. post_id as a parameter 
+    Fetches the post from the database, allows users to delete a post
+    Returns the feed page with updated posts
     '''
-    print(f"Deleting post with ID: {post_id}")
     user_id = session.get('user_id')
     if not user_id:
         flash("Please log in to continue")
