@@ -163,26 +163,55 @@ def viewPosts():
     #Only allow logged in users to view the feed
     if 'user_id' in session:
         conn = dbi.connect()
-        posts = homepage.getPostDetails(conn)
-        print(posts)
-    
-        if posts:
-            for info in posts:
-                posted_time = info['posted_time']
-                current_time = datetime.datetime.now()
-                time_diff = (current_time - posted_time)
-                daysago = time_diff.days
-                if daysago < 1:
-                    info['time_diff'] = '< 1'
-                info['time_diff'] = daysago
-                userInfo = homepage.getUser(conn, info['user_id'])
-                if userInfo['name'] != None:
-                    info['name'] = userInfo['name']
-                else:
-                    info['name'] = "Unknown"
+        uid = session.get('user_id')
+        h_options = homepage.getHousingOptions(conn)
+        print(uid)
+        h_need = homepage.getHousingNeed(conn, uid)
+        print(h_need)
+
+        if h_need:
+        #posts = homepage.getPostDetails(conn)
+        
+        #filtering by location implementation
+            posts= homepage.filterPostDetails(conn, h_need["housing_need"])
+
+
+        if request.method == 'GET':
             return render_template('feed.html',
-                            page_title='Posts',
-                            allPosts = posts)
+                                page_title='Posts',
+                                allPosts = posts,
+                                options = h_options
+                                )
+        if request.method == "POST":
+            filter = request.form.get('filter')
+            if filter == "both":
+                posts = homepage.getPostDetails(conn)
+            elif filter == "":
+                flash('Choose one of the options')
+            else:
+                posts= homepage.filterPostDetails(conn, filter)
+            print(posts)
+            if posts:
+                for info in posts:
+                    posted_time = info['posted_time']
+                    current_time = datetime.datetime.now()
+                    time_diff = (current_time - posted_time)
+                    daysago = time_diff.days
+                    info['time_diff'] = '< 1' if daysago < 1 else daysago
+                    userInfo = homepage.getUser(conn, info['user_id'])
+                    if userInfo['name'] != None:
+                        info['name'] = userInfo['name']
+                    else:
+                        info['name'] = "Unknown"
+                return render_template('feed.html',
+                                page_title='Posts',
+                                allPosts = posts,
+                                h_needs = h_need,
+                                options = h_options)
+
+            flash('No posts available') 
+            return redirect(url_for('viewPosts'))
+
     #If they are not logged in, redirect to log in page with a message
     else:
         flash('You must be logged in to view the posts!')

@@ -2,6 +2,19 @@
 
 {% block main_content %}
 <h1>Roomie-match</h1>
+
+<form method="post" action="{{url_for('viewPosts')}}"> 
+    <p style="text-align: center;"> <label for="filter"> Filter by housing needs: </label>
+        <select id="filter" name="filter">
+            <option value = "">select</option>
+            <option value = "both">both</option>
+            {% for option in options %}
+                <option value="{{option.housing_option}}"> {{option.housing_option}}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="filter">
+    </p>
+</form>
 {% for post in allPosts %}
 
 <div class="post" >
