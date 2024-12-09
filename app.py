@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 import secrets
 import homepage as homepage
 import login as login
+import datetime
 import cs304dbi as dbi
 
 
@@ -55,7 +56,7 @@ def makePosts():
             rent = request.form.get('budget')
             roommatesNum = request.form.get('max_roommates')
             sbed = request.form.get('shared_bedroom')
-            sbath = request.form.get('mshared_bathroom')
+            sbath = request.form.get('shared_bathroom')
             pets = request.form.get('ok_with_pets')
             description = request.form.get("descr")
             pref_location = request.form.get("location")
@@ -114,6 +115,61 @@ def roompic(file_id):
     row = curs.fetchone()
     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
 
+# @app.route('/feed/', methods=["GET", "POST"])
+# def viewPosts():
+#     '''Takes no parameter,
+#     Allows user to view the feed with posts made by all users,
+#     Returns the feed webpage'''
+#     #Only allow logged in users to view the feed
+#     if 'user_id' in session:
+#         user_id = session.get('user_id')
+#         conn = dbi.connect()
+#         posts = homepage.getPostDetails(conn)
+#         print(posts)
+    
+#         if posts:
+#             for info in posts:
+#                 userInfo = homepage.getUser(conn, info['user_id'])
+#                 if userInfo['name'] != None:
+#                     info['name'] = userInfo['name']
+#                 else:
+#                     info['name'] = "Unknown"
+#             return render_template('feed.html',
+#                             page_title='Posts',
+#                             allPosts = posts,
+#                             current_user_id = user_id)
+#     #If they are not logged in, redirect to log in page with a message
+#     else:
+#         flash('You must be logged in to view the posts!')
+#         return redirect(url_for('index'))
+
+def addPostDetails (conn, posts):
+    for info in posts:
+                posted_time = info['posted_time']
+                current_time = datetime.datetime.now()
+                time_diff = (current_time - posted_time)
+                daysago = time_diff.days
+                info['time_diff'] = '< 1' if daysago < 1 else daysago
+                userInfo = homepage.getUser(conn, info['user_id'])
+                if userInfo['name'] != None:
+                    info['name'] = userInfo['name']
+                else:
+                    info['name'] = "Unknown"
+    return posts
+
+"""
+The viewPosts function handles the display of posts in the feed. 
+It supports both GET and POST requests. Users must be logged in to access this functionality.
+
+If it receives a GET request: It connects to the database and retrieves post details. 
+For each post, it retrieves the user information and adds the users name to the post details. 
+It then renders the feed.html template with the page title Posts and the list of all posts.
+
+If it receives a POST request: It performs the same actions as a GET request.
+
+Returns: the feed.html template with the list of posts if the user is logged in, 
+or redirects to the index page with an error message if the user is not logged in.
+"""
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
     '''Takes no parameter,
@@ -121,27 +177,50 @@ def viewPosts():
     Returns the feed webpage'''
     #Only allow logged in users to view the feed
     if 'user_id' in session:
-        user_id = session.get('user_id')
         conn = dbi.connect()
-        posts = homepage.getPostDetails(conn)
-        print(posts)
-    
-        if posts:
-            for info in posts:
-                userInfo = homepage.getUser(conn, info['user_id'])
-                if userInfo['name'] != None:
-                    info['name'] = userInfo['name']
-                else:
-                    info['name'] = "Unknown"
+        uid = session.get('user_id')
+        h_options = homepage.getHousingOptions(conn)
+        h_need = homepage.getHousingNeed(conn, uid)
+        need = h_need["housing_need"]
+        if need == 'housing':
+            posts= homepage.filterPostDetails(conn, 'roommate')
+        else:        
+            posts= homepage.filterPostDetails(conn,'housing')
+
+        if request.method == 'GET':
+            newPosts = addPostDetails(conn,posts)
             return render_template('feed.html',
-                            page_title='Posts',
-                            allPosts = posts,
-                            current_user_id = user_id)
+                                page_title='Posts',
+                                allPosts = newPosts,
+                                options = h_options,
+                                current_user_id = uid
+                                )
+        if request.method == "POST":
+            filter = request.form.get('filter')
+            if filter == "both":
+                posts = homepage.getPostDetails(conn)
+            elif filter == "":
+                flash('Choose one of the options')
+            else:
+                posts= homepage.filterPostDetails(conn, filter)
+            print(posts)
+            if posts:
+                newPosts = addPostDetails(conn,posts)
+                return render_template('feed.html',
+                                page_title='Posts',
+                                allPosts = newPosts,
+                                h_needs = h_need,
+                                options = h_options,
+                                current_user_id = uid)
+
+            flash('No posts available') 
+            return redirect(url_for('viewPosts'))
+
     #If they are not logged in, redirect to log in page with a message
     else:
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
-    
+
 @app.route('/delete-post/<post_id>', methods=["GET", "POST"])
 def delete_post(post_id):
     '''
@@ -176,15 +255,75 @@ def delete_post(post_id):
                 # Remove the file record from the database
                 curs.execute('''delete from post where post_id = %s''', [post_id])
                 conn.commit()  # Commit after deleting the file record
-
-            flash("Post deleted successfully.")
+                flash("Post deleted successfully.")
+                return redirect(url_for('viewPosts'))
         else:
             flash("No post to delete.")
     except Exception as e:
         flash(f"An error occurred while deleting the post: {e}")
         conn.rollback()  # Rollback in case of an error
 
+@app.route('/update_post/<post_id>/', methods=["GET", "POST"])
+def updatePost(post_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to update the post.")
+        return redirect(url_for('login'))
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    allPosts = homepage.getPostDetails(conn)
+    filteredpost = []
+    for post in allPosts:
+        if post['post_id']==int(post_id):
+            filteredpost.append(post)
+    try:
+        if request.method == "GET": 
+                return render_template('makePosts.html',
+                                page_title='Edit a Post',
+                                post=filteredpost[0])       
+        if request.method == "POST":
+            #retrieves form data 
+            p_type = request.form.get('post_type')
+            h_type = request.form.get('housing_type')
+            rent = request.form.get('budget')
+            roommatesNum = request.form.get('max_roommates')
+            sbed = request.form.get('shared_bedroom')
+            sbath = request.form.get('shared_bathroom')
+            pets = request.form.get('ok_with_pets')
+            description = request.form.get("descr")
+            pref_location = request.form.get("location")
+
+            #checks wether the inputs are integers
+            if homepage.isInt(rent) and homepage.isInt(roommatesNum):
+                curs.execute(
+                    '''UPDATE post
+                    SET post_type = %s, housing_type = %s, budget = %s,
+                        max_roommates = %s, shared_bedroom = %s,
+                        shared_bathroom = %s, ok_with_pets = %s,
+                        post_desc = %s, location = %s
+                    WHERE post_id = %s''',
+                    [p_type, h_type, rent, roommatesNum, sbed, sbath, pets, description, pref_location, post_id])
+                conn.commit()
+
+                if request.files['pic']:
+                    f = request.files['pic']
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    filename = secure_filename('{}_{}.{}'.format(post_id, user_id, ext))
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    f.save(pathname)
+                
+                    curs.execute(
+                        '''update file set room_pic_filename = %s
+                            where file_id=%s''', [filename, filteredpost[0]['file_id']])
+                    conn.commit()
+                flash('Post edited successfully')
+            else:
+                flash('Budget and max_number of roomates should be integers')
+    except Exception as e:
+            flash(f"Error updating post: {e}")
     return redirect(url_for('viewPosts'))
+    
 #######################################################################################################################
 
 # Code related to profile feature
