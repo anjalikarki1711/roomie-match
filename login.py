@@ -67,6 +67,7 @@ def join():
         session['logged_in'] = True
         session['visits'] = 1
         return redirect( url_for('login' ) ) #, username=username) )
+        return redirect( url_for('login' ) ) #, username=username) )
 
 """
 The login function handles the user login process. It supports both GET and POST requests.

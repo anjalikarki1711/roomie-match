@@ -31,7 +31,7 @@
 <h2>Change Profile Picture</h2>
 <form action="{{ url_for('upload_profile_pic') }}" method="POST" enctype="multipart/form-data">
     <!-- Ensure the file input field is named 'file' as expected in the Flask route -->
-    <input type="file" name="file" accept="image/*">
+    <label> Choose file: <input type="file" name="file" accept="image/*"></label>
     <button type="submit">Upload Profile Picture</button>
 </form>
 

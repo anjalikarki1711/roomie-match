@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<h1>Make a new post</h1>
+<h1>{{page_title}}</h1>
 <div class="newPostForm">
 
-  <form method="POST" action="{{url_for('makePosts')}}" enctype="multipart/form-data">
+  <form method="POST" action="{{url_for('updatePost', post_id=post.post_id) if post else url_for('makePosts')}}" enctype="multipart/form-data">
     
     <p>
         <label for="post_type"> What are you looking for: 
             <select id="post_type" name ="post_type" required>
                 <option value="">select</option>
-                <option value="roommate">roommates(Looking for roommates to join your housing)</option>
-                <option value="housing">housing</option> 
+                <option value="roommate" {% if post and post.post_type == 'roommate' %}selected{% endif %}>roommates(Looking for roommates to join your housing)</option>
+                <option value="housing" {% if post and post.post_type == 'housing' %}selected{% endif %}>housing</option> 
         </label></select> 
     </p>
     
@@ -19,33 +19,33 @@
         <label for="housing_type"> Housing type: 
             <select id="housing_type" name ="housing_type" required>
                 <option value="">select</option>
-                <option value="long-term-post-grad">Longterm Post-grad</option>
-                <option value="summer">Summer</option>
-                <option value="winter">Winter</option>
-                <option value="short-term">Short-term</option> 
+                <option value="long-term post grad" {% if post and post.housing_type == 'long-term post grad' %}selected{% endif %}>long-term post grad</option>
+                <option value="summer" {% if post and post.housing_type == 'summer' %}selected{% endif %}>summer</option>
+                <option value="winter" {% if post and post.housing_type == 'winter' %}selected{% endif %}>winter</option>
+                <option value="short-term" {% if post and post.housing_type == 'short-term' %}selected{% endif %}>short-term</option> 
         </label></select> 
     </p>
     
     <p>
         <label for="location"> What is your preferred location? 
-            <input required type="location" name="location" id= "location"> 
+            <input required type="location" name="location" id= "location" value="{{ post.location if post else '' }}"> 
         </label> 
     </p>
     
     <p>
         <label for="budget"> How much is the monthly rent or your monthly budget?
-            <input required type="budget" name="budget" id= "budget"> 
+            <input required type="budget" name="budget" id= "budget" value="{{ post.budget if post else '' }}"> 
         </label> 
     </p>
     
     <p>
-        <label for="max_roomates"> What is the maximum number of Roommates you are willing to live with?
-            <input required type="max_roomates" name="max_roommates" id= "max_roommates"> 
+        <label for="max_roommates"> What is the maximum number of Roommates you are willing to live with?
+            <input required type="max_roomates" name="max_roommates" id= "max_roommates" value="{{ post.max_roommates if post else '' }}"> 
         </label> 
     </p>
     
-    <label for="post_desc">Give a brief description of what you are looking for: <br>
-        <textarea id= "descr" name="descr" rows="3" cols="30" required></textarea>
+    <label for="descr">Give a brief description of what you are looking for: <br>
+        <textarea id= "descr" name="descr" rows="3" cols="30" required>{{ post.post_desc if post else '' }}</textarea>
     </label>
     
     <br>
@@ -54,18 +54,18 @@
         <label for="shared_bathroom"> Does your housing have shared Bathroom or are you willing to share a bathroom? 
             <select id="shared_bathroom" name ="shared_bathroom" required>
                 <option value="">select</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
+                <option value="yes" {% if post and post.shared_bathroom == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if post and post.shared_bathroom == 'no' %}selected{% endif %}>No</option>
             </select>
         </label>
     </p>
     
     <p>
         <label for="shared_bedroom"> Does your housing have shared bedroom or are you willing to share a bedroom?
-            <select id="shared_bedroom" name ="shared_bathroom" required>
+            <select id="shared_bedroom" name ="shared_bedroom" required>
                 <option value="">select</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
+                <option value="yes" {% if post and post.shared_bedroom == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if post and post.shared_bedroom == 'no' %}selected{% endif %}>No</option>
             </select>
         </label>
     </p>
@@ -74,8 +74,8 @@
         <label for="ok_with_pets"> Is this a pets-friendly space? or are you okay to live in a pet friendly space? 
             <select id="ok_with_pets" name ="ok_with_pets" required>
                 <option value="">select</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option> 
+                <option value="yes" {% if post and post.ok_with_pets == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if post and post.ok_with_pets == 'no' %}selected{% endif %}>No</option> 
             </select>
         </label> 
     </p>
@@ -91,17 +91,9 @@
   
 
     <p>
-        <input type="submit" id="submit" value="Submit"> 
+        <input type="submit" id="submit" value="{{'Update Post' if post else 'Create Post' }}"> 
     </p>
 
 </form>
 </div>
 {% endblock %}
-
-<!-- {% if post_type == 'roommate' %} -->
-   <!-- {% endif %} -->
-
-   <!-- <form method="post" action="{{url_for('makePosts')}}" enctype="multipart/form-data">
-    <p><label>Pic: <input type="file" name="pic"></label></p>
-    <p><input type="submit" value="upload"></p>
-</form> -->
