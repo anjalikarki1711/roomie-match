@@ -105,29 +105,7 @@ def makePosts():
                     pathname = os.path.join(app.config['UPLOADS'],filename)
                     f.save(pathname)
                 
-                    ok_with_pets, max_roommates, budget, housing_type, post_type, post_desc, location) 
-                    values (%s,%s,%s,%s,%s,%s,%s,%s, %s, %s)''',
-                    [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type, description, pref_location])
-                conn.commit()
-                #use last_inserted_id to get the post id
-                curs.execute('''
-                            select last_insert_id() as pid''')
-                pidDict = curs.fetchone()
-                pid = pidDict['pid']
-
-                if not os.path.exists('uploads'):
-                    os.makedirs('uploads')
-
-                if request.files['pic']:
-                    f = request.files['pic']
-                    user_filename = f.filename
-                    ext = user_filename.split('.')[-1]
-                    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
-                    pathname = os.path.join(app.config['UPLOADS'],filename)
-                    f.save(pathname)
-                
                 curs.execute(
-                    '''insert into file(user_id, post_id, room_pic_filename) values (%s,%s, %s)
                     '''insert into file(user_id, post_id, room_pic_filename) values (%s,%s, %s)
                         ''', [uid, pid, filename])
                 conn.commit()
@@ -137,8 +115,8 @@ def makePosts():
                 flash('Budget and max_number of roomates should be integers')
     else:
         flash('You must be logged in to make a post!') 
-        flash('You must be logged in to make a post!') 
         return redirect(url_for('index'))
+
 
 """
 The roompic function handles the retrieval and display of a picture associated with a given file ID. 
