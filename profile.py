@@ -389,5 +389,5 @@ def editProfile():
     # Fetch current user data for GET request
     curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
     user = curs.fetchone()
-
+    
     return render_template('editProfile.html', user=user)
