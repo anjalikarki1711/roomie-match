@@ -208,7 +208,7 @@ def viewChat():
     '''Shows the user's chat history and people - yet to be implemented'''
     if 'user_id' in session:
         return render_template('chat.html',
-    '''Shows the user's chat history and people - yet to be implemented'''
+    '''Shows the user's chat history and people - yet to be implemented''')
     if 'user_id' in session:
         return render_template('chat.html',
                            page_title='Chat History')
