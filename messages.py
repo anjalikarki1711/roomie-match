@@ -35,9 +35,3 @@ def sendMessage(recipient_uid):
         curs.execute(sql, [sender_uid, recipient_uid, message, timestamp])
         flash("Message sent!")
         return render_template("messages.html", page_title="Message", recipient_uid=recipient_uid)
-        
-
-
-
-
-    

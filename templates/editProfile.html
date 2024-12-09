@@ -8,54 +8,67 @@
     <form action="{{ url_for('editProfile') }}" method="post">
         <div>
             <label for="name">Name:</label>
-            <input type="text" name="name" id="name" value="{{ user.name }}" required>
+            <input type="text" name="name" id="name" value="{{ user.name }}">
         </div><br>
 
         <div>
             <label for="gender">Gender:</label>
-            <input type="text" name="gender" id="gender" value="{{ user.gender }}" required>
+            <select name="gender" id="gender">
+                <option value="man" {% if user.gender == 'man' %}selected{% endif %}>Man</option>
+                <option value="woman" {% if user.gender == 'woman' %}selected{% endif %}>Woman</option>
+                <option value="nonbinary" {% if user.gender == 'nonbinary' %}selected{% endif %}>Nonbinary</option>
+            </select>
         </div><br>
 
         <div>
             <label for="age">Age:</label>
-            <input type="text" name="age" id="age" value="{{ user.age }}" required>
+            <input type="text" name="age" id="age" value="{{ user.age }}">
         </div><br>
 
         <div>
             <label for="profession">Profession:</label>
-            <input type="text" name="profession" id="profession" value="{{ user.profession }}" required>
+            <input type="text" name="profession" id="profession" value="{{ user.profession }}">
         </div><br>
 
         <div>
             <label for="location">Location:</label>
-            <input type="text" name="location" id="location" value="{{ user.location }}" required>
+            <input type="text" name="location" id="location" value="{{ user.location }}">
         </div><br>
 
         <div>
             <label for="profile_desc">Profile Description:</label>
-            <textarea name="profile_desc" id="profile_desc" rows="4" cols="50" required>{{ user.profile_desc }}</textarea>
+            <textarea name="profile_desc" id="profile_desc" rows="4" cols="50">{{ user.profile_desc }}</textarea>
         </div><br>
 
         <div>
             <label for="pets">Pets:</label>
-            <input type="text" name="pets" id="pets" value="{{ user.pets }}" required>
+            <select name="pets" id="pets">
+                <option value="yes" {% if user.pets == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if user.pets == 'no' %}selected{% endif %}>No</option>
+            </select>
         </div><br>
 
         <div>
             <label for="hobbies">Hobbies:</label>
-            <input type="text" name="hobbies" id="hobbies" value="{{ user.hobbies }}" required>
+            <input type="text" name="hobbies" id="hobbies" value="{{ user.hobbies }}">
         </div><br>
 
-        <div>
-            <label for="seeking">Seeking:</label>
-            <input type="text" name="seeking" id="seeking" value="{{ user.seeking }}" required>
-        </div><br>
+        <label for="pets">Seeking:</label>
+        <select name="seeking" id="seeking">
+            <option value="housing" {% if user.seeking == 'housing' %}selected{% endif %}>Housing</option>
+            <option value="roommate" {% if user.seeking == 'roommate' %}selected{% endif %}>Roommate</option>
+        </select>
 
         <!-- Save Changes button for all fields -->
         <button type="submit">Save Changes</button>
     </form>
 
     <form method="POST" action="{{ url_for('delete_account') }}">
+        <label>
+            <input type="checkbox" name="confirm_delete" value="yes" required>
+            I understand that this action cannot be undone.
+        </label>
+        <br>
         <button type="submit">Delete Account</button>
     </form>
     

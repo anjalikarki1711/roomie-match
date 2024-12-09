@@ -22,7 +22,6 @@ Returns: The sign-up.html template if the request method is GET, or redirects to
 def join():
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
-    
     else: 
         username = request.form.get('user-name')
         passwd1 = request.form.get('password1')
@@ -67,7 +66,7 @@ def join():
         session['uid'] = uid
         session['logged_in'] = True
         session['visits'] = 1
-        return redirect( url_for('viewProfile' ) ) #, username=username) )
+        return redirect( url_for('login' ) ) #, username=username) )
 
 """
 The login function handles the user login process. It supports both GET and POST requests.

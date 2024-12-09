@@ -1,5 +1,7 @@
 ##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
 
+##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -103,7 +105,29 @@ def makePosts():
                     pathname = os.path.join(app.config['UPLOADS'],filename)
                     f.save(pathname)
                 
+                    ok_with_pets, max_roommates, budget, housing_type, post_type, post_desc, location) 
+                    values (%s,%s,%s,%s,%s,%s,%s,%s, %s, %s)''',
+                    [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type, description, pref_location])
+                conn.commit()
+                #use last_inserted_id to get the post id
+                curs.execute('''
+                            select last_insert_id() as pid''')
+                pidDict = curs.fetchone()
+                pid = pidDict['pid']
+
+                if not os.path.exists('uploads'):
+                    os.makedirs('uploads')
+
+                if request.files['pic']:
+                    f = request.files['pic']
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    f.save(pathname)
+                
                 curs.execute(
+                    '''insert into file(user_id, post_id, room_pic_filename) values (%s,%s, %s)
                     '''insert into file(user_id, post_id, room_pic_filename) values (%s,%s, %s)
                         ''', [uid, pid, filename])
                 conn.commit()
@@ -112,6 +136,7 @@ def makePosts():
             else:
                 flash('Budget and max_number of roomates should be integers')
     else:
+        flash('You must be logged in to make a post!') 
         flash('You must be logged in to make a post!') 
         return redirect(url_for('index'))
 
@@ -160,6 +185,9 @@ def viewPosts():
     '''Takes no parameter,
     Allows user to view the feed with posts made by all users,
     Returns the feed webpage'''
+    '''Takes no parameter,
+    Allows user to view the feed with posts made by all users,
+    Returns the feed webpage'''
     #Only allow logged in users to view the feed
     if 'user_id' in session:
         conn = dbi.connect()
@@ -169,6 +197,10 @@ def viewPosts():
         if posts:
             for info in posts:
                 userInfo = homepage.getUser(conn, info['user_id'])
+                if userInfo['name'] != None:
+                    info['name'] = userInfo['name']
+                else:
+                    info['name'] = "Unknown"
                 if userInfo['name'] != None:
                     info['name'] = userInfo['name']
                 else:
@@ -198,10 +230,15 @@ def viewChat():
     '''Shows the user's chat history and people - yet to be implemented'''
     if 'user_id' in session:
         return render_template('chat.html',
+    '''Shows the user's chat history and people - yet to be implemented'''
+    if 'user_id' in session:
+        return render_template('chat.html',
                            page_title='Chat History')
     else:
         flash('You must be logged in to use the Chat feature!')
+        flash('You must be logged in to use the Chat feature!')
         return redirect(url_for('index'))
+###################################################################################################################
 ###################################################################################################################
 if __name__ == '__main__':
     import sys, os
