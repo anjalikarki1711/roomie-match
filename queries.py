@@ -23,7 +23,8 @@ def getFile(conn, file_id):
 
 def getUserInfo(conn, user_id):
     curs = dbi.dict_cursor(conn)
-    curs.execute('SELECT user_id, name, gender, age, profession, profile_desc, location, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    curs.execute('''SELECT user_id, name, gender, age, profession, profile_desc, location, pets, 
+                 hobbies, seeking FROM user WHERE user_id = %s''', [user_id])
     user = curs.fetchone()
     return user
 

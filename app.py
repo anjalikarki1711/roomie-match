@@ -14,7 +14,7 @@ import sys, os
 import homepage as homepage
 import login as login
 import datetime
-import profile as profile
+import profileInfo as profile
 import secrets
 from flask import g
 
