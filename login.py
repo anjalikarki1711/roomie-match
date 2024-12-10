@@ -63,11 +63,11 @@ def join():
         uid = row[0]
         flash('FYI, you were issued UID {}'.format(uid))
         session['username'] = username
-        session['uid'] = uid
+        session['user_id'] = uid
         session['logged_in'] = True
         session['visits'] = 1
-        return redirect( url_for('login' ) ) #, username=username) )
-        return redirect( url_for('login' ) ) #, username=username) )
+        return redirect( url_for('viewProfile' ) ) #, username=username) )
+        #return redirect( url_for('login' ) ) #, username=username) )
 
 """
 The login function handles the user login process. It supports both GET and POST requests.
