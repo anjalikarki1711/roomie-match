@@ -141,8 +141,11 @@ Input:
     new_seeking: The new seeking status of the user.
     user_id: The ID of the user to update the profile for.
 """
-def updateProfile(conn, new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id):
+def updateProfile(conn, new_name, new_gender, new_age, new_profession, new_location, 
+                  new_desc, new_pets, new_hobbies, new_seeking, user_id):
     curs = dbi.cursor(conn)
-    curs.execute('UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s',
-                         [new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id])
+    curs.execute('''UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, 
+                 profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s''',
+                         [new_name, new_gender, new_age, new_profession, new_location, new_desc, 
+                          new_pets, new_hobbies, new_seeking, user_id])
     conn.commit()
