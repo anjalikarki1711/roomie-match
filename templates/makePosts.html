@@ -19,39 +19,51 @@
         <label for="housing_type"> Housing type: 
             <select id="housing_type" name ="housing_type" required>
                 <option value="">select</option>
-                <option value="long-term post grad" {% if post and post.housing_type == 'long-term post grad' %}selected{% endif %}>long-term post grad</option>
-                <option value="summer" {% if post and post.housing_type == 'summer' %}selected{% endif %}>summer</option>
-                <option value="winter" {% if post and post.housing_type == 'winter' %}selected{% endif %}>winter</option>
-                <option value="short-term" {% if post and post.housing_type == 'short-term' %}selected{% endif %}>short-term</option> 
-        </label></select> 
+                <option value="long-term-post-grad" {% if post and post.housing_type == 'long-term-post-grad' %}selected{% endif %}>
+                    long-term post grad</option>
+                <option value="summer" {% if post and post.housing_type == 'summer' %}selected{% endif %}>
+                    summer</option>
+                <option value="winter" {% if post and post.housing_type == 'winter' %}selected{% endif %}>
+                    winter</option>
+                <option value="short-term" {% if post and post.housing_type == 'short-term' %}selected{% endif %}>
+                    short-term</option> 
+            </select> 
+        </label>
     </p>
     
     <p>
         <label for="location"> What is your preferred location? 
-            <input required type="location" name="location" id= "location" value="{{ post.location if post else '' }}"> 
+            <input required type="location" name="location" id= "location" value="{{ post.location if post else '' }}" 
+            placeholder="Example: Boston"> 
         </label> 
     </p>
     
     <p>
         <label for="budget"> How much is the monthly rent or your monthly budget?
-            <input required type="budget" name="budget" id= "budget" value="{{ post.budget if post else '' }}"> 
+            <input required type="budget" name="budget" id= "budget" value="{{ post.budget if post else '' }}" 
+            placeholder="Example: 1500"> 
         </label> 
     </p>
     
     <p>
         <label for="max_roommates"> What is the maximum number of Roommates you are willing to live with?
-            <input required type="max_roomates" name="max_roommates" id= "max_roommates" value="{{ post.max_roommates if post else '' }}"> 
+            <input required type="max_roomates" name="max_roommates" id= "max_roommates" 
+            value="{{ post.max_roommates if post else '' }}" 
+            placeholder="Example: 0"> 
         </label> 
     </p>
     
     <label for="descr">Give a brief description of what you are looking for: <br>
-        <textarea id= "descr" name="descr" rows="3" cols="30" required>{{ post.post_desc if post else '' }}</textarea>
+        <textarea id= "descr" name="descr" rows="3" cols="30" required 
+        placeholder="Example: I am looking for a roommate to join me in a studio apartment in Brooklyn">
+        {{ post.post_desc if post else '' }}
+        </textarea>
     </label>
     
     <br>
     
     <p>
-        <label for="shared_bathroom"> Does your housing have shared Bathroom or are you willing to share a bathroom? 
+        <label for="shared_bathroom">  Would you be fine living in a house with a shared bathroom? 
             <select id="shared_bathroom" name ="shared_bathroom" required>
                 <option value="">select</option>
                 <option value="yes" {% if post and post.shared_bathroom == 'yes' %}selected{% endif %}>Yes</option>
@@ -61,7 +73,7 @@
     </p>
     
     <p>
-        <label for="shared_bedroom"> Does your housing have shared bedroom or are you willing to share a bedroom?
+        <label for="shared_bedroom"> Are you willing to share a bedroom with your roommate?
             <select id="shared_bedroom" name ="shared_bedroom" required>
                 <option value="">select</option>
                 <option value="yes" {% if post and post.shared_bedroom == 'yes' %}selected{% endif %}>Yes</option>
@@ -71,7 +83,7 @@
     </p>
     
     <p>
-        <label for="ok_with_pets"> Is this a pets-friendly space? or are you okay to live in a pet friendly space? 
+        <label for="ok_with_pets"> Would you be okay living in a pet-friendly space?
             <select id="ok_with_pets" name ="ok_with_pets" required>
                 <option value="">select</option>
                 <option value="yes" {% if post and post.ok_with_pets == 'yes' %}selected{% endif %}>Yes</option>
@@ -85,11 +97,10 @@
     If you are seeking a room, upload what your ideal room looks like:</p>
     <p>
         <label>Pic: 
-            <input type="file" name="pic" required>
+            <input type="file" name="pic" {% if not post %}required{% endif %}>
         </label>
     </p>
   
-
     <p>
         <input type="submit" id="submit" value="{{'Update Post' if post else 'Create Post' }}"> 
     </p>

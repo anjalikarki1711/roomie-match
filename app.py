@@ -146,33 +146,6 @@ def roompic(file_id):
     row = curs.fetchone()
     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
 
-# @app.route('/feed/', methods=["GET", "POST"])
-# def viewPosts():
-#     '''Takes no parameter,
-#     Allows user to view the feed with posts made by all users,
-#     Returns the feed webpage'''
-#     #Only allow logged in users to view the feed
-#     if 'user_id' in session:
-#         user_id = session.get('user_id')
-#         conn = dbi.connect()
-#         posts = homepage.getPostDetails(conn)
-#         print(posts)
-    
-#         if posts:
-#             for info in posts:
-#                 userInfo = homepage.getUser(conn, info['user_id'])
-#                 if userInfo['name'] != None:
-#                     info['name'] = userInfo['name']
-#                 else:
-#                     info['name'] = "Unknown"
-#             return render_template('feed.html',
-#                             page_title='Posts',
-#                             allPosts = posts,
-#                             current_user_id = user_id)
-#     #If they are not logged in, redirect to log in page with a message
-#     else:
-#         flash('You must be logged in to view the posts!')
-#         return redirect(url_for('index'))
 
 def addPostDetails (conn, posts):
     for info in posts:
@@ -267,14 +240,27 @@ def viewPosts():
     else:
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
+"""
+Parameter: post_id, a unique integer value assigned to each post
+The delete_post function handles the deletion of a post and its associated file.
 
+Users must be logged in to access this functionality. It supports both GET and POST requests.
+
+If the user is not logged in: It redirects to the login page with an error message.
+
+If the user is logged in:
+- It connects to the database and retrieves the filename of the post's associated file.
+- Deletes the file from the file system if it exists and removes its entry from the `file` table.
+- Deletes the post entry from the `post` table.
+- Displays a success message if the deletion is successful.
+
+If an error occurs during the process, it rolls back the changes and displays an error message.
+
+Returns: Redirects to the `viewPosts` page with updated posts if the deletion is successful, 
+or redirects to the `viewPosts` page with an error message if the deletion fails.
+"""
 @app.route('/delete-post/<post_id>', methods=["GET", "POST"])
 def delete_post(post_id):
-    '''
-    Takes an integer i.e. post_id as a parameter 
-    Fetches the post from the database, allows users to delete a post
-    Returns the feed page with updated posts
-    '''
     user_id = session.get('user_id')
     if not user_id:
         flash("Please log in to continue")
@@ -309,7 +295,29 @@ def delete_post(post_id):
     except Exception as e:
         flash(f"An error occurred while deleting the post: {e}")
         conn.rollback()  # Rollback in case of an error
+"""
+Parameter: post_id, a unique integer value assigned to each post
+The updatePost function allows users to edit an existing post, with the option to update its associated picture.
 
+Users must be logged in to access this functionality. It supports both GET and POST requests.
+
+If the user is not logged in: It redirects to the login page with an error message.
+
+If it receives a GET request:
+- It connects to the database and retrieves the details of the specified post.
+- Renders the `makePosts.html` template with the post details pre-filled for editing.
+
+If it receives a POST request:
+- It retrieves form data submitted by the user, including the updated post details.
+- Validates that `budget` and `max_roommates` are integers.
+- Updates the post details in the `post` table in the database.
+- If a new picture is uploaded, it saves the file, updates its filename in the `file` table, and commits the changes.
+
+If an error occurs during the update process, it displays an error message and rolls back any changes.
+
+Returns: Redirects to the `viewPosts` page with a success message if the update is successful,
+or with an error message if the update fails.
+"""
 @app.route('/update_post/<post_id>/', methods=["GET", "POST"])
 def updatePost(post_id):
     user_id = session.get('user_id')
