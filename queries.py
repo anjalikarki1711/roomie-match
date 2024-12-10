@@ -68,30 +68,3 @@ def updateProfile(conn, new_name, new_gender, new_age, new_profession, new_locat
                          [new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id])
     conn.commit()
 
-
-
-########################### Login Queries
-def registerNewUser(conn, username, passwd):
-    curs = dbi.cursor(conn)
-    curs.execute('''INSERT INTO login(user_name,hashed_password)
-                            VALUES(%s,%s)
-                         RETURNING user_id''',
-                        [username, stored])
-    user_id = curs.fetchone()[0]
-
-            # Insert the user_id into the user table
-    curs.execute('''INSERT INTO user(user_id)
-                VALUES(%s)''',
-             [user_id])
-            
-    conn.commit()
-    return user_id
-
-def loginUser(conn, username, passwd):
-    curs = dbi.dict_cursor(conn)
-    curs.execute('''SELECT user_id,user_name,hashed_password
-                        FROM login
-                        WHERE user_name = %s''',
-                    [username])
-    row = curs.fetchone()
-    return row
