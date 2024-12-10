@@ -1,7 +1,5 @@
 ##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
 
-##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
-
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -258,6 +256,7 @@ def viewPosts():
     else:
         flash('You must be logged in to view the posts!')
         return redirect(url_for('index'))
+
 """
 Parameter: post_id, a unique integer value assigned to each post
 The delete_post function handles the deletion of a post and its associated file.
@@ -313,6 +312,8 @@ def delete_post(post_id):
     except Exception as e:
         flash(f"An error occurred while deleting the post: {e}")
         conn.rollback()  # Rollback in case of an error
+
+
 """
 Parameter: post_id, a unique integer value assigned to each post
 The updatePost function allows users to edit an existing post, with the option to update its associated picture.
