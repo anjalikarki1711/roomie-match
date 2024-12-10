@@ -146,7 +146,25 @@ def roompic(file_id):
     row = curs.fetchone()
     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
 
+""" 
+The addPostDetails function processes a list of posts to add additional details such as the time 
+difference since the post was made and the name of the user who made the post. 
 
+Input: conn: A database connection object. 
+       posts: A list of dictionaries, where each dictionary contains information about a post, 
+        including 'posted_time' and 'user_id'. 
+
+
+For each post in the list: - Calculates the time difference between the
+ current time and the time the post was made. - Adds a 'time_diff' key to the post 
+ dictionary, indicating the number of days since the post was made. If the post was 
+ 
+ made less than a day ago, 'time_diff' is set to '< 1'. It retrieves user information based 
+ on 'user_id' and adds the user's name to the post dictionary. If the user's name is not available, 
+ sets the name to "Unknown". 
+ 
+ Returns: The updated list of posts with additional details. 
+ """
 def addPostDetails (conn, posts):
     for info in posts:
                 posted_time = info['posted_time']
