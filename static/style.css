@@ -86,7 +86,19 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
         color: black;
         visibility: visible;
 }
+
 .loginButtons{
+    display: inline-block;
+    padding: 5px 20px;
+    font-size: 18px;
+    background-color: #007ea9;
+    border: 2px solid #000;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+#logoutButton{
     display: inline-block;
     padding: 5px 20px;
     font-size: 18px;
