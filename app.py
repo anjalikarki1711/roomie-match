@@ -47,7 +47,10 @@ def makePosts():
 
     It returns the makePosts.html from a GET request and it redirects to the viewPosts page from a successful POST request
     """
-    if 'user_id' in session:
+    if 'user_id' not in session:
+        flash('You must be logged in to make a post!') 
+        return redirect(url_for('index'))
+    else:
         uid = session['user_id']
         if request.method == 'GET':
             return render_template('makePosts.html',
@@ -102,9 +105,7 @@ def makePosts():
                 return redirect(url_for('viewPosts'))
             else:
                 flash('Budget and max_number of roomates should be integers')
-    else:
-        flash('You must be logged in to make a post!') 
-        return redirect(url_for('index'))
+        
 
 
 @app.route('/roompic/<file_id>')
@@ -181,8 +182,11 @@ def viewPosts():
     Returns: the feed.html template with the list of posts if the user is logged in, 
     or redirects to the index page with an error message if the user is not logged in.
     """
-    #Only allow logged in users to view the feed
-    if 'user_id' in session:
+    ##If they are not logged in, redirect to log in page with a message
+    if 'user_id' not in session:
+        flash('You must be logged in to view the posts!')
+        return redirect(url_for('index'))
+    else:
         conn = dbi.connect()
         uid = session.get('user_id')
         h_options = homepage.getHousingOptions(conn)
@@ -221,11 +225,6 @@ def viewPosts():
 
             flash('No posts available') 
             return redirect(url_for('viewPosts'))
-
-    #If they are not logged in, redirect to log in page with a message
-    else:
-        flash('You must be logged in to view the posts!')
-        return redirect(url_for('index'))
 
 
 @app.route('/delete-post/<post_id>', methods=["GET", "POST"])
@@ -279,7 +278,6 @@ def delete_post(post_id):
             flash("No post to delete.")
     except Exception as e:
         flash(f"An error occurred while deleting the post: {e}")
-        conn.rollback()  # Rollback in case of an error
 
 
 @app.route('/update_post/<post_id>/', methods=["GET", "POST"])
