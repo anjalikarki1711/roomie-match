@@ -1,11 +1,7 @@
 ##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
 
-from flask import (Flask, render_template, make_response, url_for, request,
-                   redirect, flash, session, send_from_directory, jsonify)
-from werkzeug.utils import secure_filename
-app = Flask(__name__)
-
-
+from flask import (Flask, render_template, url_for, request,
+                   redirect, flash, session, send_from_directory)
 from werkzeug.utils import secure_filename
 import cs304dbi as dbi
 import sys, os
@@ -14,22 +10,19 @@ import login as login
 import datetime
 import profile as profile
 import secrets
-from flask import g
+
+app = Flask(__name__)
 
 #for file upload
 app.config['UPLOADS'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
 # Directory for profile picture uploads
 app.config['UPLOADS1'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')  
-
-
 app.secret_key = 'your secret here'
 app.secret_key = secrets.token_hex()
 
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
-
-
 
 @app.route('/')
 def index():
@@ -39,7 +32,6 @@ def index():
     """
     return render_template('home.html',
                            page_title='Home Page')
-
 
 
 @app.route('/makePost/', methods=["GET", "POST"])
@@ -112,7 +104,6 @@ def makePosts():
     else:
         flash('You must be logged in to make a post!') 
         return redirect(url_for('index'))
-
 
 
 @app.route('/roompic/<file_id>')
@@ -290,7 +281,6 @@ def delete_post(post_id):
         conn.rollback()  # Rollback in case of an error
 
 
-
 @app.route('/update_post/<post_id>/', methods=["GET", "POST"])
 def updatePost(post_id):
     """
@@ -377,7 +367,6 @@ def updatePost(post_id):
     
 #######################################################################################################################
 
-
 @app.route('/chat/', methods=["GET", "POST"])
 def viewChat():
     """
@@ -392,17 +381,13 @@ def viewChat():
     with an error message if the user is not logged in.
     """
     '''Shows the user's chat history and people - yet to be implemented'''
-    if 'user_id' in session:
-        return render_template('chat.html', page_title="Chat History")
     #'''Shows the user's chat history and people - yet to be implemented''')
     if 'user_id' in session:
         return render_template('chat.html',
                            page_title='Chat History')
     else:
         flash('You must be logged in to use the Chat feature!')
-        flash('You must be logged in to use the Chat feature!')
         return redirect(url_for('index'))
-###################################################################################################################
 ###################################################################################################################
 if __name__ == '__main__':
     import sys, os
