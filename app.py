@@ -5,13 +5,14 @@ from flask import (Flask, render_template, url_for, request,
 from werkzeug.utils import secure_filename
 import cs304dbi as dbi
 import sys, os
+app = Flask(__name__)
 import homepage as homepage
 import login as login
 import datetime
 import profile as profile
 import secrets
 
-app = Flask(__name__)
+
 
 #for file upload
 app.config['UPLOADS'] = 'uploads'

@@ -3,7 +3,6 @@
 # Database related functions for homepage
 import cs304dbi as dbi
 
-X
 def getPostDetails(conn):
     """
     This function handles sending messages.

@@ -6,8 +6,9 @@ from __main__ import app
 from werkzeug.utils import secure_filename
 import cs304dbi as dbi
 import os
-import homepage
-import login
+import homepage as homepage
+import login as login
+from flask import g
 import queries as q
 
 """
