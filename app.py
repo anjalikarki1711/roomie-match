@@ -11,8 +11,10 @@ import cs304dbi as dbi
 import sys, os
 import homepage as homepage
 import login as login
+
 import datetime
 import profile as profile
+import queries as q
 import secrets
 from flask import g
 
@@ -400,6 +402,16 @@ def updatePost(post_id):
     
 #######################################################################################################################
 
+@app.route('/chatlist/')
+def chatList():
+    user_id = session['user_id']
+    conn = q.getConnection()
+    allMessaging = q.peopleMessaging(conn, user_id)
+
+    #display results
+    return(render_template('chatlist.html', allPeople = allMessaging))
+
+
 """
 The viewChat function handles the display of the chat history. It supports both GET and POST requests. 
 Users must be logged in to access this functionality.
@@ -411,15 +423,14 @@ If it receives a POST request: It performs the same action as a GET request.
 Returns: the chat.html template if the user is logged in, or redirects to the index page 
 with an error message if the user is not logged in.
 """
-@app.route('/chat/', methods=["GET", "POST"])
+@app.route('/chat/', methods=["GET"]) #, "POST"])
 def viewChat():
     '''Shows the user's chat history and people - yet to be implemented'''
-    if 'user_id' in session:
-        return render_template('chat.html', page_title="Chat History")
+    #if 'user_id' in session:
+        #return render_template('chat.html', page_title="Chat History")
     #'''Shows the user's chat history and people - yet to be implemented''')
     if 'user_id' in session:
-        return render_template('chat.html',
-                           page_title='Chat History')
+        return redirect(url_for('chatList'))
     else:
         flash('You must be logged in to use the Chat feature!')
         flash('You must be logged in to use the Chat feature!')
