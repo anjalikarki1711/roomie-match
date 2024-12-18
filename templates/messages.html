@@ -2,25 +2,15 @@
 
 {% block content %}
 <!--Individual chats-->
-<h2>Message {{to_name}} with user id {{recipient_id}} </h2>
+<h2>Messages between {{from_name}} with user id {{current_user_id}} and {{to_name}} with user id {{recipient_id}} </h2>
 
-<!-- {% for items in messages %}
+{% for items in messages %}
     <div class="message {% if items.sender_id == current_user_id %}sent{% else %}received{% endif %}">
         <p>Sender: {{items.sender_name}}, Receiver: {{items.recipient_name}}</p>
         <p>Message: {{ items.message }}</p>
         <p>Timestamp: {{items.time}}</p>
     </div>
-{% endfor %} -->
-
-<div class="messages-container">
-    {% for items in messages %}
-        <div class="message {% if items.sender_id == current_user_id %}sent{% else %}received{% endif %}">
-            <p><strong>Sender:</strong> {{items.sender_name}}</p>
-            <p><strong>Message:</strong> {{items.message }}</p>
-            <p><small><strong>Timestamp:</strong> {{items.time}}</small></p>
-        </div>
-    {% endfor %}
-</div>
+{% endfor %}
 
 <div class="form">
     <form id="messages-form" method="post" action="{{url_for('sendMessage', rec_id = recipient_id)}}">

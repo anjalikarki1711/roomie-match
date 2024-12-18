@@ -99,13 +99,18 @@ def sendMessage(rec_id):
         user_id = session.get('user_id')
         conn = q.getConnection()
         allmessages = getChatsbetween(conn, rec_id, user_id)
-        for message in allmessages:
-            sender_id = message['sender']
-            recipient_id = message['recipient']
-            sender_name = homepage.getUserDetails(conn, sender_id)['name']
-            rec_name = homepage.getUserDetails(conn, recipient_id)['name']
-            message['sender_name'] = sender_name
-            message['recipient_name'] = rec_name
+        if len(allmessages) != 0:
+            for message in allmessages:
+                sender_id = message['sender']
+                recipient_id = message['recipient']
+                sender_name = homepage.getUserDetails(conn, sender_id)['name']
+                rec_name = homepage.getUserDetails(conn, recipient_id)['name']
+                message['sender_name'] = sender_name
+                message['recipient_name'] = rec_name
+        else:
+            sender_id = user_id
+            rec_name = homepage.getUserDetails(conn, rec_id)['name']
+            sender_name = homepage.getUserDetails(conn, user_id)['name']
         if request.method == "GET":                
             return render_template('messages.html', 
                                 page_title = "Individual Chats",
