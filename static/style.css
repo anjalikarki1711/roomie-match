@@ -10,12 +10,10 @@ HTML {
 }
 
 /* For flashed messages; make them stand out using red and italics */
-
 #messages {
     color: var(--color-hilite);
     font-style: italic;
 }
-
 
 h1 {
     font-size: 200%;
@@ -26,10 +24,9 @@ h1 {
 h2, h3 {
     color: var(--color-header);
     padding: 10px;
-}
-    
+}  
 
-/* for a simple navbar. Talk to Scott if you want drop-downs. */
+/* for a simple navbar. */
 nav > ul {
     display: flex;
     flex-direction: row;
@@ -39,6 +36,7 @@ nav ul {
     list-style-type: none;
     margin: 0px;
     padding: 0px;
+    
 }
 
 nav > ul > li {
@@ -129,15 +127,6 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
     margin-left: 30px;
 }
 
-.post{
-    border: 2px solid #007ea9;;
-    border-radius: 5px;
-    border-radius: 15px;
-    width: fit-content;
-    padding: 10px;
-    align-self: center;
-}
-
 .newPostFom{
     text-align: center;
 }
@@ -196,54 +185,42 @@ input[type=button], input[type=submit] {
     border: 1px solid #ccc; /* Optional: Adds a border */
 }
 
-  .desc{
-    font-weight: bold;
-  }
+.desc{
+font-weight: bold;
+}
 
 /* ######################################################################################################## */
 .message {
     margin: 10px 0;
-    padding: 10px;
-    border-radius: 10px;
+    padding: 0px 10px;
+    border-radius: 20px;
     max-width: 60%;
     font-family: Arial, sans-serif;
     font-size: 14px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Sent messages */
 .message.sent {
-    background-color: #d1f7d1; /* Light green */
-    align-self: flex-end; /* Align to the right */
+    background-color: #0096FF; /* Blue background */
+    align-self: flex-end;  /* Align to the right */
     text-align: right;
     margin-left: auto;
     border: 1px solid #87c687;
+    color: white;
 }
 
 /* Received messages */
 .message.received {
-    background-color: #f0f0f0; /* Light grey */
-    align-self: flex-start; /* Align to the left */
+    background-color: white; /* White background */
+    align-self: flex-start;  /* Align to the left */
     text-align: left;
     margin-right: auto;
     border: 1px solid #cccccc;
+    color: black;
 }
 
-/* General styling */
-.message p {
-    margin: 5px 0;
-}
 
-.message strong {
-    font-weight: bold;
-}
 
-.message small {
-    font-size: 12px;
-    color: #555;
-}
-/* Ensure consistent display */
-#messages {
-    display: flex;
-    flex-direction: column;
-}
 
