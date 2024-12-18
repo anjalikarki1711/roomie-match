@@ -63,7 +63,7 @@
     <br>
     
     <p>
-        <label for="shared_bathroom">  Would you be fine living in a house with a shared bathroom? 
+        <label for="shared_bathroom">  Would you be okay with, or are you offering, a space with a shared bathroom?
             <select id="shared_bathroom" name ="shared_bathroom" required>
                 <option value="">select</option>
                 <option value="yes" {% if post and post.shared_bathroom == 'yes' %}selected{% endif %}>Yes</option>
@@ -73,7 +73,7 @@
     </p>
     
     <p>
-        <label for="shared_bedroom"> Are you willing to share a bedroom with your roommate?
+        <label for="shared_bedroom"> Would you be okay with, or are you offering, a space with a shared bedroom?
             <select id="shared_bedroom" name ="shared_bedroom" required>
                 <option value="">select</option>
                 <option value="yes" {% if post and post.shared_bedroom == 'yes' %}selected{% endif %}>Yes</option>

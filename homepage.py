@@ -1,7 +1,10 @@
 # # Roomie-match Homepage flask code 
 
 # Database related functions for homepage
+
 import cs304dbi as dbi
+import datetime
+import homepage
 
 def getPostDetails(conn):
     """
@@ -135,3 +138,53 @@ def filterPostDetails(conn, housing_need):
             budget, housing_type, post_type, location, post_desc, posted_time, room_pic_filename, 
             file_id from post join file on post.post_id= file.post_id where post.post_type = %s order by posted_time desc''', [housing_need])
     return curs.fetchall()
+
+def getTimeDiff(posts):
+    """ 
+    The getTimeDiff function processes a list of posts to add additional details such as the time 
+    difference since the post was made. 
+
+    Input:
+        posts: A list of dictionaries, where each dictionary contains information about a post, 
+            including 'posted_time' and 'user_id'. 
+
+
+    For each post in the list: - Calculates the time difference between the
+    current time and the time the post was made. - Adds a 'time_diff' key to the post 
+    dictionary, indicating the number of days since the post was made. If the post was 
+    made less than a day ago, 'time_diff' is set to '< 1'.
+    
+    Returns: The updated list of posts with additional details. 
+    """
+    for info in posts:
+        posted_time = info['posted_time']
+        current_time = datetime.datetime.now()
+        time_diff = (current_time - posted_time)
+        daysago = time_diff.days
+        info['time_diff'] = '< 1' if daysago < 1 else daysago
+    return posts
+
+def getPostUser(conn, posts):
+    """ 
+    The getPostUser function processes a list of posts to add additional details such as the name of the user who made the post. 
+
+    Input: conn: A database connection object. 
+        posts: A list of dictionaries, where each dictionary contains information about a post, 
+            including 'posted_time' and 'user_id'. 
+
+
+    For each post in the list: 
+        It retrieves user information based 
+        on 'user_id' and adds the user's name to the post dictionary. If the user's name is not available, 
+        sets the name to "Unknown". 
+    
+    Returns: The updated list of posts with additional details. 
+    """
+    for info in posts:
+        userInfo = homepage.getUser(conn, info['user_id'])
+        if userInfo['name'] != None:
+            info['name'] = userInfo['name']
+        else:
+            info['name'] = "Unknown"
+    return posts
+
