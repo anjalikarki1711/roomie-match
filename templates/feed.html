@@ -2,7 +2,6 @@
 
 {% block main_content %}
 <h1>Roomie-match</h1>
-
 <form method="post" action="{{url_for('viewPosts')}}"> 
     <p style="text-align: center;"> <label for="filter"> Filter by housing needs: </label>
         <select id="filter" name="filter">
@@ -29,7 +28,7 @@
             <li>Shared Bedroom: {{post.shared_bedroom}}</li>
             <li>Pets Friendly: {{post.ok_with_pets}}</li>
             <li>Picture of the room:</li> 
-            <img class="pics" src="{{url_for('roompic',file_id=post.file_id)}}">
+            <img class="pics" src="{{url_for('roompic',file_id=post.file_id)}}" alt="">
         </ul>
         <p style="font-size: x-small;"> Posted <i>{{post.time_diff}} day(s) ago</i> </p>
 

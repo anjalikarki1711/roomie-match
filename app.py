@@ -134,40 +134,6 @@ def roompic(file_id):
     return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
 
 
-def addPostDetails (conn, posts):
-    """ 
-    The addPostDetails function processes a list of posts to add additional details such as the time 
-    difference since the post was made and the name of the user who made the post. 
-
-    Input: conn: A database connection object. 
-        posts: A list of dictionaries, where each dictionary contains information about a post, 
-            including 'posted_time' and 'user_id'. 
-
-
-    For each post in the list: - Calculates the time difference between the
-    current time and the time the post was made. - Adds a 'time_diff' key to the post 
-    dictionary, indicating the number of days since the post was made. If the post was 
-    
-    made less than a day ago, 'time_diff' is set to '< 1'. It retrieves user information based 
-    on 'user_id' and adds the user's name to the post dictionary. If the user's name is not available, 
-    sets the name to "Unknown". 
-    
-    Returns: The updated list of posts with additional details. 
-    """
-    for info in posts:
-                posted_time = info['posted_time']
-                current_time = datetime.datetime.now()
-                time_diff = (current_time - posted_time)
-                daysago = time_diff.days
-                info['time_diff'] = '< 1' if daysago < 1 else daysago
-                userInfo = homepage.getUser(conn, info['user_id'])
-                if userInfo['name'] != None:
-                    info['name'] = userInfo['name']
-                else:
-                    info['name'] = "Unknown"
-    return posts
-
-
 @app.route('/feed/', methods=["GET", "POST"])
 def viewPosts():
     """
@@ -193,13 +159,16 @@ def viewPosts():
         h_options = homepage.getHousingOptions(conn)
         h_need = homepage.getHousingNeed(conn, uid)
         need = h_need["housing_need"]
+        flash('FYI, Since you are looking for {}, your default feedpage shows posts offering {}! You can use our filter page to look through all posts'.format(need, need))
         if need == 'housing':
             posts= homepage.filterPostDetails(conn, 'roommate')
         else:        
             posts= homepage.filterPostDetails(conn,'housing')
 
         if request.method == 'GET':
-            newPosts = addPostDetails(conn,posts)
+            newPosts = homepage.getTimeDiff(posts)
+            newPosts = homepage.getPostUser(conn, newPosts)
+            print(newPosts)
             return render_template('feed.html',
                                 page_title='Posts',
                                 allPosts = newPosts,
@@ -216,7 +185,8 @@ def viewPosts():
                 posts= homepage.filterPostDetails(conn, filter)
             print(posts)
             if posts:
-                newPosts = addPostDetails(conn,posts)
+                newPosts = homepage.getTimeDiff(posts)
+                newPosts = homepage.getPostUser(conn, newPosts)
                 return render_template('feed.html',
                                 page_title='Posts',
                                 allPosts = newPosts,
@@ -226,7 +196,6 @@ def viewPosts():
 
             flash('No posts available') 
             return redirect(url_for('viewPosts'))
-
 
 @app.route('/delete-post/<post_id>', methods=["GET", "POST"])
 def delete_post(post_id):
