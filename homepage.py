@@ -61,7 +61,7 @@ def getUser(conn, id):
 
     """
     curs = dbi.dict_cursor(conn)
-    userInfo = curs.execute('''select name, profile_desc from user inner join post
+    curs.execute('''select name, profile_desc from user inner join post
                             using(user_id) where user_id = %s''', [id])
     return curs.fetchone()
 
