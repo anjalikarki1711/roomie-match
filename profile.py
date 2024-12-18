@@ -9,6 +9,7 @@ import os
 import homepage
 import login
 import queries as q
+import time
 
 """
 This function looks up a profile picture based on it's file id and returns a webpage with the profile picture associated with that id.
@@ -62,7 +63,8 @@ def viewProfile():
     if user:
         if profile_pic_data:
             profile_pic_filename = profile_pic_data['profile_pic_filename']
-            profile_pic = url_for('profpic', file_id=profile_pic_data['file_id'])
+            # profile_pic = url_for('profpic', file_id=profile_pic_data['file_id'])
+            profile_pic = url_for('profpic', file_id=profile_pic_data['file_id'], t=time.time())
         else:
             profile_pic = None
         
@@ -71,8 +73,6 @@ def viewProfile():
     else:
         flash("User not found.")
         return redirect(url_for('index'))
-
-
 
 """
 The upload_profile_pic function handles the uploading of a user’s profile picture. 

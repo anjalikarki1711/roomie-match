@@ -5,7 +5,10 @@
 {% for person in allPeople %}
 
 <div class="peopleMessaging">
-    <h2>{{person[1]}}</h2>
+
+    <a href="{{ url_for('sendMessage', rec_id=person[0]) }}">
+        <button>person[1]</button>
+
 </div>
 
 {% endfor %}

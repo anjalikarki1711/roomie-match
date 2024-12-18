@@ -16,13 +16,14 @@ import datetime
 import profile as profile
 import queries as q
 import secrets
-from flask import g
 
 #for file upload
-app.config['UPLOADS'] = 'uploads'
+# app.config['UPLOADS'] = os.path.expanduser('/students/roomie_match/uploads/')
+app.config['UPLOADS'] = os.path.expanduser('~/cs304/roomie-match/uploads/')
 app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
 # Directory for profile picture uploads
-app.config['UPLOADS1'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')  
+# app.config['UPLOADS1'] = os.path.expanduser('/students/roomie_match/uploads/profile_pics')  
+app.config['UPLOADS1'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')
 
 
 app.secret_key = 'your secret here'
@@ -407,6 +408,7 @@ def chatList():
     user_id = session['user_id']
     conn = q.getConnection()
     allMessaging = q.peopleMessaging(conn, user_id)
+    print (allMessaging)
 
     #display results
     return(render_template('chatlist.html', allPeople = allMessaging))
