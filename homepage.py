@@ -35,7 +35,19 @@ def getProfilePic(conn, postId):
     picture = curs.execute('''select room_pic_filename from file where post_id = %s''', [postId])
     return curs.fetchone()
     
+def getUserDetails(conn, id):
+    """
+    This function retrieves a user’s details from the database.
+    Input: Connection, user id
 
+    It connects to the database, executes a query to select everything for the given user ID, and returns the fetched result.
+
+    Returns: A dictionary containing the user details from the user table.
+
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from user where user_id = %s''', [id])
+    return curs.fetchone()
 
 def getUser(conn, id):
     """

@@ -34,8 +34,9 @@
         <p style="font-size: x-small;"> Posted <i>{{post.time_diff}} day(s) ago</i> </p>
 
         {% if post.user_id != current_user_id %}
-        <form method="get" action="{{url_for('viewChat')}}">
+        <form method="get" action="{{url_for('sendMessage',rec_id=post.user_id)}}">
         <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
+        <p><input type="hidden" name="recipient" id="submit" value="Message {{post.user_id}}"> </p>
         </form>
         {% endif %}
 

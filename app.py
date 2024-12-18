@@ -11,6 +11,7 @@ import login as login
 import datetime
 import profile as profile
 import secrets
+import messages as messages
 
 
 
@@ -366,7 +367,7 @@ def updatePost(post_id):
     
 #######################################################################################################################
 
-@app.route('/chat/', methods=["GET", "POST"])
+# @app.route('/chat/', methods=["GET", "POST"])
 def viewChat():
     """
     The viewChat function handles the display of the chat history. It supports both GET and POST requests. 

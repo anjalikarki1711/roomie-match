@@ -1,19 +1,34 @@
 {% extends "base.html" %}
 
-{# replaces default content block #}
 {% block content %}
+<!--Individual chats-->
+<h2>Message {{to_name}} with user id {{recipient_id}} </h2>
+
+<!-- {% for items in messages %}
+    <div class="message {% if items.sender_id == current_user_id %}sent{% else %}received{% endif %}">
+        <p>Sender: {{items.sender_name}}, Receiver: {{items.recipient_name}}</p>
+        <p>Message: {{ items.message }}</p>
+        <p>Timestamp: {{items.time}}</p>
+    </div>
+{% endfor %} -->
+
+<div class="messages-container">
+    {% for items in messages %}
+        <div class="message {% if items.sender_id == current_user_id %}sent{% else %}received{% endif %}">
+            <p><strong>Sender:</strong> {{items.sender_name}}</p>
+            <p><strong>Message:</strong> {{items.message }}</p>
+            <p><small><strong>Timestamp:</strong> {{items.time}}</small></p>
+        </div>
+    {% endfor %}
+</div>
+
 <div class="form">
-    <form id="messages-form"
-        method="post"
-        action="/message/{{recipient_uid}}">
-    <h2> Messages </h2>
-    <p><label>Message:
-        <input required type="text" name="message" size="50"></label></p>
-
-    <p><input name="send" type="submit" value="sendMessage"></p>
-
+    <form id="messages-form" method="post" action="{{url_for('sendMessage', rec_id = recipient_id)}}">
+        <p><label>Message: 
+            <input required type="text" name="message" size="50"></label></p>
+        <p><input name="send" type="submit" value="SendMessage"></p>
     </form>
 </div>
-<h2 id="loginButton" class="loginButtons"><a href="url_for('viewPosts')">Back</a></h2>
 
+<h2 id="loginButton" class="loginButtons"><a href="{{ url_for('viewPosts') }}">Back</a></h2>
 {% endblock %}
