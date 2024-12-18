@@ -87,6 +87,17 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
         visibility: visible;
 }
 
+.loginButtons{
+    display: inline-block;
+    padding: 5px 20px;
+    font-size: 18px;
+    background-color: #007ea9;
+    border: 2px solid #000;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
 #logoutButton{
     display: inline-block;
     padding: 5px 20px;
@@ -188,3 +199,51 @@ input[type=button], input[type=submit] {
   .desc{
     font-weight: bold;
   }
+
+/* ######################################################################################################## */
+.message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 60%;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* Sent messages */
+.message.sent {
+    background-color: #d1f7d1; /* Light green */
+    align-self: flex-end; /* Align to the right */
+    text-align: right;
+    margin-left: auto;
+    border: 1px solid #87c687;
+}
+
+/* Received messages */
+.message.received {
+    background-color: #f0f0f0; /* Light grey */
+    align-self: flex-start; /* Align to the left */
+    text-align: left;
+    margin-right: auto;
+    border: 1px solid #cccccc;
+}
+
+/* General styling */
+.message p {
+    margin: 5px 0;
+}
+
+.message strong {
+    font-weight: bold;
+}
+
+.message small {
+    font-size: 12px;
+    color: #555;
+}
+/* Ensure consistent display */
+#messages {
+    display: flex;
+    flex-direction: column;
+}
+

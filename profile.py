@@ -9,6 +9,7 @@ import os
 import homepage as homepage
 import login as login
 from flask import g
+import queries as q
 
 """
 This function looks up a profile picture based on it's file id and returns a webpage with the profile picture associated with that id.
@@ -20,16 +21,14 @@ It executes a query that gets a given file name based on a file id. It then gets
 Return: A specifi profile picture
 """
 @app.route('/prof_pic/<file_id>')
-def pic(file_id):
-    conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
-    numrows = curs.execute(
-        '''select profile_pic_filename from file where file_id = %s''',
-        [file_id])
-    if numrows == 0:
+def profpic(file_id):
+    conn = q.getConnection()
+
+    row = q.getFile(conn, file_id)
+    if row == 0:
         flash('No picture for {}'.format(file_id))
         return redirect(url_for('index'))
-    row = curs.fetchone()
+    
     return send_from_directory(app.config['UPLOADS'],row['profile_pic_filename'])
 
 
@@ -51,21 +50,20 @@ def viewProfile():
         flash("You must log in to view the profile.")
         return redirect(url_for('login'))
 
-    conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
+    conn = q.getConnection()
+    #curs = dbi.dict_cursor(conn)
     
     # Fetch user information
-    curs.execute('SELECT user_id, name, gender, age, profession, profile_desc, location, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
-    user = curs.fetchone()
+    user = q.getUserInfo(conn, user_id) #curs.fetchone()
     
+
     # Fetch profile picture
-    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
-    profile_pic_data = curs.fetchone()
+    profile_pic_data = q.getProfpic(conn, user_id) #curs.fetchone()
 
     if user:
         if profile_pic_data:
             profile_pic_filename = profile_pic_data['profile_pic_filename']
-            profile_pic = url_for('pic', file_id=profile_pic_data['file_id'])
+            profile_pic = url_for('profpic', file_id=profile_pic_data['file_id'])
         else:
             profile_pic = None
         
@@ -97,12 +95,12 @@ def upload_profile_pic():
         flash("Please log in to upload a profile picture.")
         return redirect(url_for('viewProfile'))
 
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
+    conn = q.getConnection()
+    #curs = dbi.cursor(conn)
 
     # Check if the user already has a profile picture
-    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
-    existing_file = curs.fetchone()
+    #curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    existing_file = q.getProfpic(conn, user_id) #curs.fetchone()
 
     if 'file' not in request.files:
         flash("No file part.")
@@ -120,10 +118,12 @@ def upload_profile_pic():
     try:
         if existing_file:
             # Update existing profile picture
-            curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
+            #curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
+            q.updateProfPic(conn, filename, user_id)
         else:
             # Insert new profile picture record
-            curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+            #curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+            q.insertProfPic(conn, filename, user_id)
 
         conn.commit()  # Commit changes to the database
         flash("Profile picture uploaded successfully!")
@@ -152,13 +152,13 @@ def delete_profile_pic():
         flash("Please log in to delete your profile picture.")
         return redirect(url_for('viewProfile'))
 
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
+    conn = q.getConnection()
+    #curs = dbi.cursor(conn)
 
     try:
         # Fetch and delete the file from the file system
-        curs.execute('SELECT profile_pic_filename FROM file WHERE user_id = %s', [user_id])
-        profile_pic_file = curs.fetchone()
+        #curs.execute('SELECT profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+        profile_pic_file = q.getProfpic(conn, user_id) #curs.fetchone()
 
         if profile_pic_file:
             filename = profile_pic_file[0]  # Accessing the filename by index
@@ -168,8 +168,9 @@ def delete_profile_pic():
                 os.remove(file_path)
 
             # Remove the file record from the database
-            curs.execute('DELETE FROM file WHERE user_id = %s', [user_id])
-            conn.commit()  # Commit after deleting the file record
+            #curs.execute('DELETE FROM file WHERE user_id = %s', [user_id])
+            #conn.commit()  # Commit after deleting the file record
+            q.deleteProfPic(conn, user_id)
             flash("Profile picture deleted successfully.")
         else:
             flash("No profile picture to delete.")
@@ -198,26 +199,31 @@ def delete_account():
         flash("You must log in to delete your account.")
         return redirect(url_for('login'))
 
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
+    conn = q.getConnection()
+    #curs = dbi.cursor(conn)
 
-    try:
-        # Call delete_profile_pic to remove the profile picture
-        delete_profile_pic()
+    confirm_delete = request.form.get('confirm_delete')
+    if confirm_delete == "yes":
+        try:
+            # Call delete_profile_pic to remove the profile picture
+            #delete_profile_pic()
 
-        # Delete the user's account record from the database
-        curs.execute('DELETE FROM user WHERE user_id = %s', [user_id])
-        curs.execute('DELETE FROM login WHERE user_id = %s', [user_id])
-        conn.commit()
+            # Delete the user's account record from the database
+            #curs.execute('DELETE FROM user WHERE user_id = %s', [user_id])
+            #curs.execute('DELETE FROM login WHERE user_id = %s', [user_id])
+            #conn.commit()
+            q.deleteAccount(conn, user_id)
 
-        # Clear the user's session
-        session.clear()
+            # Clear the user's session
+            session.clear()
 
-        flash("Account and profile picture deleted successfully.")
-        return redirect(url_for('join'))
-    except Exception as e:
-        flash(f"Error deleting account: {e}")
-        return redirect(url_for('viewProfile'))
+            flash("Account and profile picture deleted successfully.")
+            return redirect(url_for('join'))
+        except Exception as e:
+            flash(f"Error deleting account: {e}")
+            return redirect(url_for('viewProfile'))
+    else:
+        return "Deletion not confirmed.", 400
 
 """
 The editProfile function handles the editing of a user’s profile. It supports both GET and POST requests. 
@@ -233,8 +239,8 @@ Returns: the editProfile.html template with the user’s data if the user is log
 login page with an error message if the user is not logged in.
 
 """
-@app.route('/edit-profile/', methods=["GET", "POST"])
-def editProfile():
+@app.route('/update-profile/', methods=["GET", "POST"])
+def updateProfile():
     user_id = session.get('user_id')
     if not user_id:
         flash("You must log in to edit the profile.")
@@ -251,242 +257,147 @@ def editProfile():
         new_hobbies = request.form.get('hobbies')
         new_seeking = request.form.get('seeking')
 
-        conn = dbi.connect()
+        # Validate inputs
+        errors = []
+        
+        # Validate age (must be a number)
+        try:
+            new_age = int(new_age)
+        except ValueError:
+            errors.append("Age must be a number.")
+
+        # Validate gender (check if it's one of the allowed values)
+        if new_gender not in ['man', 'woman', 'nonbinary']:
+            errors.append("Gender must be 'Man', 'Woman', or 'Nonbinary'.")
+
+        # Check if name, age, and location are empty or just spaces
+        if not new_name.strip():  # Checks if name is just spaces
+            errors.append("Name cannot be empty or just spaces.")
+        if not new_location.strip():  # Checks if location is just spaces
+            errors.append("Location cannot be empty or just spaces.")
+
+        # Check if profession, profile description, and hobbies are just spaces (but allow empty)
+        if new_profession and not new_profession.strip():  # if profession is not empty but only contains spaces
+            errors.append("Profession cannot be just spaces.")
+        if new_desc and not new_desc.strip():  # if profile description is not empty but only contains spaces
+            errors.append("Profile description cannot be just spaces.")
+        if new_hobbies and not new_hobbies.strip():  # if hobbies is not empty but only contains spaces
+            errors.append("Hobbies cannot be just spaces.")
+        
+        if errors:
+            for error in errors:
+                flash(error)
+            return redirect(url_for('viewProfile'))
+
+        conn = q.getConnection()
         curs = dbi.cursor(conn)
 
         try:
-            curs.execute('UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s',
-                         [new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id])
-            conn.commit()
+            #curs.execute('UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s',
+             #            [new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id])
+            #conn.commit()
+            q.updateProfile(conn, new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id)
             flash("Profile updated successfully!")
             return redirect(url_for('viewProfile'))
         except Exception as e:
             flash(f"Error updating profile: {e}")
     
     # Show the form to edit
-    conn = dbi.connect()
-    curs = dbi.dict_cursor(conn)
-    curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
-    user = curs.fetchone()
+    conn = q.getConnection()
+    #curs = dbi.dict_cursor(conn)
+    #curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    user = q.getUserInfo(conn, user_id) #curs.fetchone()
 
     return render_template('editProfile.html', user=user)
 
-
-"""
-The edit_profile_desc function handles the editing of a user’s profile description. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the user’s profile description in the database 
-with the new description provided in the form and redirects to the view profile page with a success message.
-
-Returns: redirect to the view profile page after processing the update.
-
-"""
-@app.route('/edit-profile-desc/', methods=["POST"])
-def edit_profile_desc():
+@app.route('/edit-profile/', methods=["GET", "POST"])
+def editProfile():
     user_id = session.get('user_id')
-    new_desc = request.form.get('profile_desc')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
+    if not user_id:
+        flash("You must log in to edit the profile.")
+        return redirect(url_for('login'))
+
+    conn = q.getConnection()
+    #curs = dbi.dict_cursor(conn)
+
+    if request.method == "POST":
+        # Retrieve form values
+        form_data = {
+            "name": request.form.get("name"),
+            "gender": request.form.get("gender"),
+            "age": request.form.get("age"),
+            "profession": request.form.get("profession"),
+            "location": request.form.get("location"),
+            "profile_desc": request.form.get("profile_desc"),
+            "pets": request.form.get("pets"),
+            "hobbies": request.form.get("hobbies"),
+            "seeking": request.form.get("seeking"),
+        }
+
+        # Validate input types
+        errors = []
+
+        # Validate age (should be an integer)
+        try:
+            form_data["age"] = int(form_data["age"])
+        except ValueError:
+            errors.append("Age must be a number.")
+
+        # Validate gender (should be 'Man', 'Woman', or 'Nonbinary')
+        if form_data["gender"] not in ['man', 'woman', 'nonbinary']:
+            errors.append("Gender must be 'Man', 'Woman', or 'Nonbinary'.")
+        
+        # Check if name, age, and location are empty or just spaces
+        if not form_data["name"].strip():  # Checks if name is just spaces
+            errors.append("Name cannot be empty or just spaces.")
+        if not form_data["location"].strip():  # Checks if location is just spaces
+            errors.append("Location cannot be empty or just spaces.")
+
+        # Check if profession, profile description, and hobbies are just spaces (but allow empty)
+        if form_data["profession"] and not form_data["profession"].strip():  # if profession is not empty but only contains spaces
+            errors.append("Profession cannot be just spaces.")
+        if form_data["profile_desc"] and not form_data["profile_desc"].strip():  # if profile description is not empty but only contains spaces
+            errors.append("Profile description cannot be just spaces.")
+        if form_data["hobbies"] and not form_data["hobbies"].strip():  # if hobbies is not empty but only contains spaces
+            errors.append("Hobbies cannot be just spaces.")
+
+        # # Check if name or profession is empty
+        # if not form_data["name"] or not form_data["profession"]:
+        #     errors.append("Name and profession must not be empty.")
+
+        if errors:
+            for error in errors:
+                flash(error)
+            return redirect(url_for('editProfile'))
+
     try:
-        curs.execute('UPDATE user SET profile_desc = %s WHERE user_id = %s',
-                     [new_desc, user_id])
-        conn.commit()
-        flash("Profile description updated successfully!")
+        # Update all fields at once
+        """ curs.execute('''
+            UPDATE user 
+            SET name = %s, gender = %s, age = %s, profession = %s, location = %s, 
+                profile_desc = %s, pets = %s, hobbies = %s, seeking = %s 
+            WHERE user_id = %s
+        ''', [
+            form_data["name"], form_data["gender"], form_data["age"], 
+            form_data["profession"], form_data["location"], form_data["profile_desc"], 
+            form_data["pets"], form_data["hobbies"], form_data["seeking"], 
+            user_id
+        ]) """
+
+        q.updateProfile(conn, form_data["name"], form_data["gender"], form_data["age"], 
+            form_data["profession"], form_data["location"], form_data["profile_desc"], 
+            form_data["pets"], form_data["hobbies"], form_data["seeking"], 
+            user_id)
+        
+        #conn.commit()
+        flash("Profile updated successfully!")
+        return redirect(url_for('viewProfile'))
     except Exception as e:
-        flash(f"Error updating profile description: {e}")
-    return redirect(url_for('viewProfile'))
+        flash(f"Error updating profile: {e}")
+        conn.rollback()
 
-"""
-The edit_location function handles the editing of a user’s location. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the users location in the database with the 
-new location provided in the form and redirects to the view profile page with a success message.
-
-Returns: a redirect to the view profile page after processing the update.
-"""
-@app.route('/edit-location/', methods=["POST"])
-def edit_location():
-    user_id = session.get('user_id')
-    new_location = request.form.get('location')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET location = %s WHERE user_id = %s',
-                     [new_location, user_id])
-        conn.commit()
-        flash("Location updated successfully!")
-    except Exception as e:
-        flash(f"Error updating location: {e}")
-    return redirect(url_for('viewProfile'))
-
-"""
-The edit_hobbies function handles the editing of a user’s hobbies. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the user’s hobbies in the database with the 
-new hobbies provided in the form and redirects to the view profile page with a success message.
-
-Returns: A redirect to the view profile page after processing the update.
-"""
-@app.route('/edit-hobbies/', methods=["POST"])
-def edit_hobbies():
-    user_id = session.get('user_id')
-    new_hobbies = request.form.get('hobbies')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET hobbies = %s WHERE user_id = %s',
-                     [new_hobbies, user_id])
-        conn.commit()
-        flash("Hobbies updated successfully!")
-    except Exception as e:
-        flash(f"Error updating hobbies: {e}")
-    return redirect(url_for('viewProfile'))
-
-"""
-The edit_name function handles the editing of a user’s name. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the user’s name in the database with the new 
-name provided in the form and redirects to the view profile page with a success message.
-
-Returns:redirect to the view profile page after processing the update.
-"""
-@app.route('/edit-name/', methods=["POST"])
-def edit_name():
-    user_id = session.get('user_id')
-    new_name = request.form.get('name')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET name = %s WHERE user_id = %s',
-                     [new_name, user_id])
-        conn.commit()
-        flash("Name updated successfully!")
-    except Exception as e:
-        flash(f"Error updating name: {e}")
-    return redirect(url_for('viewProfile'))
-
-"""
-The edit_gender function handles the editing of a user’s gender. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the user’s gender in the database with the new 
-gender provided in the form and redirects to the view profile page with a success message.
-
-Returns: redirect to the view profile page after processing the update.
-"""
-@app.route('/edit-gender/', methods=["POST"])
-def edit_gender():
-    user_id = session.get('user_id')
-    new_gender = request.form.get('gender')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET gender = %s WHERE user_id = %s',
-                     [new_gender, user_id])
-        conn.commit()
-        flash("Gender updated successfully!")
-    except Exception as e:
-        flash(f"Error updating gender: {e}")
-    return redirect(url_for('viewProfile'))
-
-"""
-The edit_age function handles the editing of a user’s age. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the user’s age in the database with the 
-new age provided in the form and redirects to the view profile page with a success message.
-
-Returns:  redirect to the view profile page after processing the update.
-"""
-@app.route('/edit-age/', methods=["POST"])
-def edit_age():
-    user_id = session.get('user_id')
-    new_age = request.form.get('age')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET age = %s WHERE user_id = %s',
-                     [new_age, user_id])
-        conn.commit()
-        flash("Age updated successfully!")
-    except Exception as e:
-        flash(f"Error updating age: {e}")
-    return redirect(url_for('viewProfile'))
-
-"""
-The edit_profession function handles the editing of a user’s profession. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the user’s profession in the database with 
-the new profession provided in the form and redirects to the view profile page with a success message.
-
-Returns:redirect to the view profile page after processing the update.
-"""
-@app.route('/edit-profession/', methods=["POST"])
-def edit_profession():
-    user_id = session.get('user_id')
-    new_profession = request.form.get('profession')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET profession = %s WHERE user_id = %s',
-                     [new_age, user_id])
-        conn.commit()
-        flash("Profession updated successfully!")
-    except Exception as e:
-        flash(f"Error updating profession: {e}")
-    return redirect(url_for('viewProfile'))
-
-
-"""
-The edit_pets function handles the editing of a user’s pet preferences. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request:  It updates the user’s pet preferences in the database
-with the new preferences provided in the form and redirects to the profile view page with a success message.
-
-Returns: A redirect to the profile view page after processing the update.
-"""
-@app.route('/edit-pets/', methods=["POST"])
-def edit_pets():
-    user_id = session.get('user_id')
-    new_pets = request.form.get('pets')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET pets = %s WHERE user_id = %s',
-                     [new_pets, user_id])
-        conn.commit()
-        flash("Pets updated successfully!")
-    except Exception as e:
-        flash(f"Error updating pets: {e}")
-    return redirect(url_for('viewProfile'))
-
-"""
-The edit_seeking function handles the editing of a users seeking preferences. 
-It supports POST requests. Users must be logged in to access this functionality.
-
-If it receives a POST request: It updates the users seeking preferences in the database 
-with the new preferences provided in the form and redirects to the profile view page with a success message.
-
-Returns: A rediirect to the profile view page after processing the update.
-
-"""
-@app.route('/edit-seeking/', methods=["POST"])
-def edit_seeking():
-    user_id = session.get('user_id')
-    new_seeking = request.form.get('seeking')
-    conn = dbi.connect()
-    curs = dbi.cursor(conn)
-    try:
-        curs.execute('UPDATE user SET seeking = %s WHERE user_id = %s',
-                     [new_seeking, user_id])
-        conn.commit()
-        flash("Seeking updated successfully!")
-    except Exception as e:
-        flash(f"Error updating seeking: {e}")
-    return redirect(url_for('viewProfile'))
+    # Fetch current user data for GET request
+    #curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    user = q.getUserInfo(conn, user_id) #curs.fetchone()
+    
+    return render_template('editProfile.html', user=user)
