@@ -403,13 +403,18 @@ def updatePost(post_id):
     
 #######################################################################################################################
 
+""" 
+The chatlist function handles the `/chatlist/` route and generates 
+a list of people available for messaging. It retrieves the current 
+user's ID from the session, fetches relevant data from the database, 
+and renders the `chatlist.html` template with the list of people.
+"""
 @app.route('/chatlist/')
 def chatList():
     user_id = session['user_id']
     conn = q.getConnection()
     allMessaging = q.peopleMessaging(conn, user_id)
-    print (allMessaging)
-
+    
     #display results
     return(render_template('chatlist.html', allPeople = allMessaging))
 
