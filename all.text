@@ -1,0 +1,2232 @@
+====================== app.py =====================
+##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
+
+from flask import (Flask, render_template, url_for, request,
+                   redirect, flash, session, send_from_directory)
+from werkzeug.utils import secure_filename
+import cs304dbi as dbi
+import sys, os
+app = Flask(__name__)
+import homepage 
+import login 
+import datetime
+import profile
+import secrets
+import messages 
+import queries as q
+
+# For file upload
+app.config['UPLOADS'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
+# Directory for profile picture uploads
+app.config['UPLOADS1'] = os.path.expanduser('~/cs304/roomie-match/uploads/profile_pics')  
+app.secret_key = 'your secret here'
+app.secret_key = secrets.token_hex()
+
+# This gets us better error messages for certain common request errors
+app.config['TRAP_BAD_REQUEST_ERRORS'] = True
+
+@app.route('/')
+def index():
+    """
+    This route directs users to the homepage where they can choose to either login or sign up to this app
+    Returns: the template home.html
+    """
+    if 'user_id' in session:
+        logged_in = True
+    else:
+        logged_in = False
+    return render_template('home.html',
+                           page_title='Home Page',
+                           logged_in=logged_in)
+############################################################################################################################
+#POST related functions
+@app.route('/makePost/', methods=["GET", "POST"])
+def makePosts():
+    """
+    The makePosts function handles the creation of new posts by users. It supports both GET and POST requests. 
+    Users must be logged in to access this functionality.
+
+    If it receives a GET request: Renders the makePosts.html template with the page title “Make a Post”.
+    If it receives a POST request: It retrieves form data such as post type, housing type, budget, max roommates, shared bedroom, shared bathroom, 
+    pet preferences, a description and location of the post. This is the added to the database and it redirects to the view posts page.
+
+    It returns the makePosts.html from a GET request and it redirects to the viewPosts page from a successful POST request
+    """
+    if 'user_id' not in session:
+        flash('You must be logged in to make a post!') 
+        return redirect(url_for('index'))
+    else:
+        uid = session['user_id']
+        if request.method == 'GET':
+            return render_template('makePosts.html',
+                            page_title='Make a Post')
+        else: 
+            
+            #retrieves form data 
+            p_type = request.form.get('post_type')
+            h_type = request.form.get('housing_type')
+            rent = request.form.get('budget')
+            roommatesNum = request.form.get('max_roommates')
+            sbed = request.form.get('shared_bedroom')
+            sbath = request.form.get('shared_bathroom')
+            pets = request.form.get('ok_with_pets')
+            description = request.form.get("descr")
+            pref_location = request.form.get("location")
+            
+            conn = dbi.connect()
+            curs = dbi.dict_cursor(conn)
+            #insert into the database
+            #checks wether the inputs are integers
+            if homepage.isInt(rent) and homepage.isInt(roommatesNum):
+                curs.execute(
+                    '''insert into post(user_id, shared_bathroom, shared_bedroom, 
+                    ok_with_pets, max_roommates, budget, housing_type, post_type, post_desc, location) 
+                    values (%s,%s,%s,%s,%s,%s,%s,%s, %s, %s)''',
+                    [uid, sbath, sbed, pets, roommatesNum, rent, h_type, p_type, description, pref_location])
+                conn.commit()
+                #use last_inserted_id to get the post id
+                curs.execute('''
+                            select last_insert_id() as pid''')
+                pidDict = curs.fetchone()
+                pid = pidDict['pid']
+
+                if not os.path.exists('uploads'):
+                    os.makedirs('uploads')
+
+                if request.files['pic']:
+                    f = request.files['pic']
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    filename = secure_filename('{}_{}.{}'.format(pid, uid, ext))
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    f.save(pathname)
+                
+                curs.execute(
+                    '''insert into file(user_id, post_id, room_pic_filename) values (%s,%s, %s)
+                        ''', [uid, pid, filename])
+                conn.commit()
+                flash('Post successful')
+                return redirect(url_for('viewPosts'))
+            else:
+                flash('Budget and max_number of roomates should be integers')
+        
+@app.route('/roompic/<file_id>')
+def roompic(file_id):
+    """
+    The roompic function handles the retrieval and display of a picture associated with a given file ID. 
+
+    Input: Users must provide a valid file_id.
+
+    If it receives a GET request: It connects to the database and retrieves the filename of the picture associated 
+    with the provided file_id. If no picture is found, it displays an error message and redirects to the index page. 
+    If a picture is found, it sends the file from the uploads directory.
+
+    Returns: the picture file from the uploads directory if found, or redirects to the index page if no picture is found.
+    """
+    conn = dbi.connect()
+    curs = dbi.dict_cursor(conn)
+    numrows = curs.execute(
+        '''select room_pic_filename from file where file_id = %s''',
+        [file_id])
+    if numrows == 0:
+        flash('No picture for {}'.format(file_id))
+        return redirect(url_for('index'))
+    row = curs.fetchone()
+    return send_from_directory(app.config['UPLOADS'],row['room_pic_filename']) 
+
+
+@app.route('/feed/', methods=["GET", "POST"])
+def viewPosts():
+    """
+    The viewPosts function handles the display of posts in the feed. 
+    It supports both GET and POST requests. Users must be logged in to access this functionality.
+
+    If it receives a GET request: It connects to the database and retrieves post details. 
+    For each post, it retrieves the user information and adds the users name to the post details. 
+    It then renders the feed.html template with the page title Posts and the list of all posts.
+
+    If it receives a POST request: It performs the same actions as a GET request.
+
+    Returns: the feed.html template with the list of posts if the user is logged in, 
+    or redirects to the index page with an error message if the user is not logged in.
+    """
+    ##If they are not logged in, redirect to log in page with a message
+    if 'user_id' not in session:
+        flash('You must be logged in to view the posts!')
+        return redirect(url_for('index'))
+    else:
+        conn = dbi.connect()
+        uid = session.get('user_id')
+        h_options = homepage.getHousingOptions(conn)
+        h_need = homepage.getHousingNeed(conn, uid)
+        need = h_need["housing_need"]
+        flash('''FYI, Since you are looking for {}, your default feedpage shows posts 
+              offering {}! You can use our filter dropdown to look through all posts'''.format(need, need))
+        if need == 'housing':
+            posts= homepage.filterPostDetails(conn, 'roommate')
+        else:        
+            posts= homepage.filterPostDetails(conn,'housing')
+
+        if request.method == 'GET':
+            newPosts = homepage.getTimeDiff(posts)
+            newPosts = homepage.getPostUser(conn, newPosts)
+            print(newPosts)
+            return render_template('feed.html',
+                                page_title='Posts',
+                                allPosts = newPosts,
+                                options = h_options,
+                                current_user_id = uid
+                                )
+        if request.method == "POST":
+            filter = request.form.get('filter')
+            if filter == "both":
+                posts = homepage.getPostDetails(conn)
+            elif filter == "":
+                flash('Choose one of the options')
+            else:
+                posts= homepage.filterPostDetails(conn, filter)
+            print(posts)
+            if posts:
+                newPosts = homepage.getTimeDiff(posts)
+                newPosts = homepage.getPostUser(conn, newPosts)
+                return render_template('feed.html',
+                                page_title='Posts',
+                                allPosts = newPosts,
+                                h_needs = h_need,
+                                options = h_options,
+                                current_user_id = uid)
+
+            flash('No posts available') 
+            return redirect(url_for('viewPosts'))
+
+@app.route('/delete-post/<post_id>', methods=["GET", "POST"])
+def delete_post(post_id):
+    """
+    Parameter: post_id, a unique integer value assigned to each post
+    The delete_post function handles the deletion of a post and its associated file.
+
+    Users must be logged in to access this functionality. It supports both GET and POST requests.
+
+    If the user is not logged in: It redirects to the login page with an error message.
+
+    If the user is logged in:
+    - It connects to the database and retrieves the filename of the post's associated file.
+    - Deletes the file from the file system if it exists and removes its entry from the `file` table.
+    - Deletes the post entry from the `post` table.
+    - Displays a success message if the deletion is successful.
+
+    If an error occurs during the process, it rolls back the changes and displays an error message.
+
+    Returns: Redirects to the `viewPosts` page with updated posts if the deletion is successful, 
+    or redirects to the `viewPosts` page with an error message if the deletion fails.
+    """
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to continue")
+        return redirect(url_for('index'))
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    try:
+        # Fetch and delete the file from the file system
+        curs.execute('''SELECT room_pic_filename from file 
+                     WHERE post_id = %s''', [post_id])
+        pic = curs.fetchone()
+
+        if pic:
+            filename = pic[0]  # Accessing the filename by index
+            file_path = os.path.join(app.config['UPLOADS'], filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            # Remove the file record from the database
+            curs.execute('''delete from file where post_id = %s''', [post_id])
+            conn.commit()  # Commit after deleting the file record
+
+            # Remove the file record from the database
+            curs.execute('''delete from post where post_id = %s''', [post_id])
+            conn.commit()  # Commit after deleting the file record
+            flash("Post deleted successfully.")
+            return redirect(url_for('viewPosts'))
+        else:
+            flash("No post to delete.")
+    except Exception as e:
+        flash(f"An error occurred while deleting the post: {e}")
+
+
+@app.route('/update_post/<post_id>/', methods=["GET", "POST"])
+def updatePost(post_id):
+    """
+    Parameter: post_id, a unique integer value assigned to each post
+    The updatePost function allows users to edit an existing post, with the option to update its associated picture.
+
+    Users must be logged in to access this functionality. It supports both GET and POST requests.
+
+    If the user is not logged in: It redirects to the login page with an error message.
+
+    If it receives a GET request:
+    - It connects to the database and retrieves the details of the specified post.
+    - Renders the `makePosts.html` template with the post details pre-filled for editing.
+
+    If it receives a POST request:
+    - It retrieves form data submitted by the user, including the updated post details.
+    - Validates that `budget` and `max_roommates` are integers.
+    - Updates the post details in the `post` table in the database.
+    - If a new picture is uploaded, it saves the file, updates its filename in the `file` table, and commits the changes.
+
+    If an error occurs during the update process, it displays an error message and rolls back any changes.
+
+    Returns: Redirects to the `viewPosts` page with a success message if the update is successful,
+    or with an error message if the update fails.
+    """
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to update the post.")
+        return redirect(url_for('login'))
+    conn = dbi.connect()
+    curs = dbi.cursor(conn)
+    allPosts = homepage.getPostDetails(conn)
+    filteredpost = []
+    for post in allPosts:
+        if post['post_id']==int(post_id):
+            filteredpost.append(post)
+    try:
+        if request.method == "GET": 
+                return render_template('makePosts.html',
+                                page_title='Edit a Post',
+                                post=filteredpost[0])       
+        if request.method == "POST":
+            #retrieves form data 
+            p_type = request.form.get('post_type')
+            h_type = request.form.get('housing_type')
+            rent = request.form.get('budget')
+            roommatesNum = request.form.get('max_roommates')
+            sbed = request.form.get('shared_bedroom')
+            sbath = request.form.get('shared_bathroom')
+            pets = request.form.get('ok_with_pets')
+            description = request.form.get("descr")
+            pref_location = request.form.get("location")
+
+            #checks wether the inputs are integers
+            if homepage.isInt(rent) and homepage.isInt(roommatesNum):
+                curs.execute(
+                    '''UPDATE post
+                    SET post_type = %s, housing_type = %s, budget = %s,
+                        max_roommates = %s, shared_bedroom = %s,
+                        shared_bathroom = %s, ok_with_pets = %s,
+                        post_desc = %s, location = %s
+                    WHERE post_id = %s''',
+                    [p_type, h_type, rent, roommatesNum, sbed, sbath, pets, description, pref_location, post_id])
+                conn.commit()
+
+                if request.files['pic']:
+                    f = request.files['pic']
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    filename = secure_filename('{}_{}.{}'.format(post_id, user_id, ext))
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    f.save(pathname)
+                
+                    curs.execute(
+                        '''update file set room_pic_filename = %s
+                            where file_id=%s''', [filename, filteredpost[0]['file_id']])
+                    conn.commit()
+                flash('Post edited successfully')
+            else:
+                flash('Budget and max_number of roomates should be integers')
+    except Exception as e:
+            flash(f"Error updating post: {e}")
+    return redirect(url_for('viewPosts'))
+    
+#######################################################################################################################
+#CHAT related functions
+
+@app.route('/chatlist/')
+def chatList():
+    """
+    The chatlist function handles the `/chatlist/` route and generates
+    a list of people available for messaging. 
+    
+    Retrieves: the current user's ID from the session, 
+    fetches relevant data from the database
+
+    Returns: a render of the `chatlist.html` template with the list of people.
+    """
+    user_id = session['user_id']
+    conn = q.getConnection()
+    allMessaging = q.peopleMessaging(conn, user_id)
+    if len(allMessaging)==0:
+        flash("No messages yet!")
+    return(render_template('chatlist.html', allPeople = allMessaging))
+
+
+@app.route('/chat/', methods=["GET"])
+def viewChat():
+    """
+    The viewChat function handles the display of the chat history. It supports both GET and POST requests.
+    Users must be logged in to access this functionality.
+
+
+    If it receives a GET request: It renders the chatlist.html template.
+
+
+    If it receives a POST request: It performs the same action as a GET request.
+
+
+    Returns: the chatlist.html template if the user is logged in, or redirects to the index page
+    with an error message if the user is not logged in.
+    """
+    if 'user_id' in session:
+        return redirect(url_for('chatList'))
+    else:
+        flash('You must be logged in to use the Chat feature!')
+        return redirect(url_for('index'))
+###################################################################################################################
+if __name__ == '__main__':
+    import sys, os
+    if len(sys.argv) > 1:
+        # arg, if any, is the desired port number
+        port = int(sys.argv[1])
+        assert(port>1024)
+    else:
+        port = os.getuid()
+    # set this local variable to 'wmdb' or your personal or team db
+    db_to_use = 'roomie_match_db' 
+    print(f'will connect to {db_to_use}')
+    dbi.conf(db_to_use)
+    app.debug = True
+    app.run('0.0.0.0',port)
+====================== homepage.py =====================
+##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
+
+# # Roomie-match Homepage flask code 
+
+# Database related functions for homepage
+
+import cs304dbi as dbi
+import datetime
+import homepage
+
+def getPostDetails(conn):
+    """
+    This function handles sending messages.
+    Input: recipient user id
+    It renders the message page for GET requests. For POST requests, it retrieves the message from the form, 
+    gets the senders user ID from the session, records the current timestamp, inserts the message details into the database, 
+    and displays a confirmation message.
+
+    Returns: For GET requests: Renders the messages.html template with the page title “Message” and the recipients user ID.
+    For POST requests: Inserts the message into the database and renders the messages.html template with a confirmation message.
+    """
+    curs = dbi.dict_cursor(conn)
+    posts = curs.execute('''select post.post_id, post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
+            budget, housing_type, post_type, location, post_desc, posted_time, room_pic_filename, 
+            file_id from post join file on post.post_id= file.post_id order by posted_time desc''')
+    return curs.fetchall()
+
+
+def getProfilePic(conn, postId):
+    """
+    This function retrieves the picture associated with a post from the database for the feed.
+
+    Input: Connection and postID
+
+    It connects to the database, executes a query to select the room picture  filename for the given post ID, and returns the fetched result.
+
+    Returns: A dictionary containing the room picture filename.
+    """
+    curs = dbi.dict_cursor(conn)
+    picture = curs.execute('''select room_pic_filename from file where post_id = %s''', [postId])
+    return curs.fetchone()
+    
+def getUserDetails(conn, id):
+    """
+    This function retrieves a user’s details from the database.
+    Input: Connection, user id
+
+    It connects to the database, executes a query to select everything for the given user ID, and returns the fetched result.
+
+    Returns: A dictionary containing the user details from the user table.
+
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from user where user_id = %s''', [id])
+    return curs.fetchone()
+
+def getUser(conn, id):
+    """
+    This function retrieves a user’s details from the database.
+    Input: Connection, user id
+
+    It connects to the database, executes a query to select the users name and 
+    profile description for the given user ID, and returns the fetched result.
+
+    Returns: A dictionary containing the users name and profile description.
+
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select name, profile_desc from user inner join post
+                            using(user_id) where user_id = %s''', [id])
+    return curs.fetchone()
+
+def isInt(var):
+    """
+    This function attempts to convert the variable to an integer. If successful, it returns True; otherwise, it returns False.
+    Input: var 
+
+    Returns: True if the variable can be converted to an integer, False otherwise.
+    """
+    try:
+        var = int(var)
+        return True
+    except ValueError:
+        return False
+
+
+def getHousingNeed(conn, uid):
+    """
+    This function retrieves user's housing need from user table.
+    Input: Connection, user_id
+
+    It connects to the database, executes a query to select 
+    what kind of housing the user is seeking for(roommates or housing) 
+    and returns the fetched result.
+
+    Returns: A dictionary containing the user's housing need
+
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select seeking as housing_need from user where user_id = %s ''', [uid])
+    return curs.fetchone()
+
+
+def getHousingOptions(conn):
+    """
+    This function retrieves housing needs that were posted by our app's users 
+    Input: Connection
+
+    It connects to the database, executes a query to select 
+    the distinct housing needs users have posted from the post database
+    and returns the fetched result.
+
+    Returns: A list of dictionaries containing the all available housing options 
+
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select distinct post_type as housing_option from post''')
+    return curs.fetchall()
+
+
+def filterPostDetails(conn, housing_need):
+    """
+    This function retrieves filtered post details from the database.
+    Filters the posts by the housing need specified (post_type)
+
+    Input: connection, housing_need
+
+    It connects to the database, executes a query
+    to select post details filtered by post_type, 
+    and returns the fetched results.
+
+    Returns: A list of dictionaries containing post details, including user ID, 
+    shared bathroom, shared bedroom, pet preferences, maximum roommates, budget, housing type, 
+    post type, location, post description, room picture filename, and file ID.
+
+    """
+    curs = dbi.dict_cursor(conn)
+    #filter by post_type(type of their housing needs(either housing or roommates))
+    curs.execute('''select post.post_id, post.user_id, shared_bathroom, shared_bedroom, ok_with_pets, max_roommates,
+            budget, housing_type, post_type, location, post_desc, posted_time, room_pic_filename, 
+            file_id from post join file on post.post_id= file.post_id where post.post_type = %s order by posted_time desc''', [housing_need])
+    return curs.fetchall()
+
+def getTimeDiff(posts):
+    """ 
+    The getTimeDiff function processes a list of posts to add additional details such as the time 
+    difference since the post was made. 
+
+    Input:
+        posts: A list of dictionaries, where each dictionary contains information about a post, 
+            including 'posted_time' and 'user_id'. 
+
+
+    For each post in the list: - Calculates the time difference between the
+    current time and the time the post was made. - Adds a 'time_diff' key to the post 
+    dictionary, indicating the number of days since the post was made. If the post was 
+    made less than a day ago, 'time_diff' is set to '< 1'.
+    
+    Returns: The updated list of posts with additional details. 
+    """
+    for info in posts:
+        posted_time = info['posted_time']
+        current_time = datetime.datetime.now()
+        time_diff = (current_time - posted_time)
+        daysago = time_diff.days
+        info['time_diff'] = '< 1' if daysago < 1 else daysago
+    return posts
+
+def getPostUser(conn, posts):
+    """ 
+    The getPostUser function processes a list of posts to add additional details such as the name of the user who made the post. 
+
+    Input: conn: A database connection object. 
+        posts: A list of dictionaries, where each dictionary contains information about a post, 
+            including 'posted_time' and 'user_id'. 
+
+
+    For each post in the list: 
+        It retrieves user information based 
+        on 'user_id' and adds the user's name to the post dictionary. If the user's name is not available, 
+        sets the name to "Unknown". 
+    
+    Returns: The updated list of posts with additional details. 
+    """
+    for info in posts:
+        userInfo = homepage.getUser(conn, info['user_id'])
+        if userInfo['name'] != None:
+            info['name'] = userInfo['name']
+        else:
+            info['name'] = "Unknown"
+    return posts
+
+
+====================== login.py =====================
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+
+from flask import (Flask, render_template, make_response, url_for, request,
+                   redirect, flash, session, send_from_directory, jsonify)
+from werkzeug.utils import secure_filename
+from __main__ import app
+
+import bcrypt
+import cs304dbi as dbi
+
+@app.route('/sign-up/', methods=["GET", "POST"])
+def join():
+    """
+    The join function handles the user registration process. It supports both GET and POST requests.
+
+    If it receives a GET request: It renders the sign-up.html template.
+
+    If it receives a POST request: It retrieves the username and password from the form. 
+    If the passwords do not match, it displays an error message and redirects to the sign-up page. 
+    If the passwords match, it hashes the password and stores the user information in the database. 
+    It then creates a new user session and redirects to the profile view page.
+
+    Returns: The sign-up.html template if the request method is GET, or redirects to the profile view 
+    page after successful registration.
+    """
+    if request.method == "GET":
+        return render_template ("sign-up.html", page_title="Sign Up")
+    else: 
+        username = request.form.get('user-name')
+        passwd1 = request.form.get('password1')
+        passwd2 = request.form.get('password2')
+        if passwd1 != passwd2:
+            flash('passwords do not match')
+            return redirect( url_for('join'))
+        if '@wellesley.edu' not in username:
+            flash('Please use your Wellesley email!')
+            return redirect( url_for('join'))
+
+        hashed = bcrypt.hashpw(passwd1.encode('utf-8'),
+                            bcrypt.gensalt())
+        stored = hashed.decode('utf-8')
+        print(passwd1, type(passwd1), hashed, stored)
+
+        #connect to database
+        conn = dbi.connect()
+        curs = dbi.cursor(conn)
+        try:
+            curs.execute('''INSERT INTO login(user_name,hashed_password)
+                            VALUES(%s,%s)
+                         RETURNING user_id''',
+                        [username, stored])
+            user_id = curs.fetchone()[0]
+
+            # Insert the user_id into the user table
+            curs.execute('''INSERT INTO user(user_id)
+                VALUES(%s)''',
+             [user_id])
+            
+            conn.commit()
+        except Exception as err:
+            flash('That email is tied to an existing account: {}'.format(repr(err)))
+            return redirect(url_for('index'))
+        curs.execute('select last_insert_id()')
+        row = curs.fetchone()
+        uid = row[0]
+        flash('FYI, you were issued UID {}'.format(uid))
+        session['username'] = username
+        session['user_id'] = uid
+        session['logged_in'] = True
+        session['visits'] = 1
+        return redirect( url_for('viewProfile' ) ) #, username=username) )
+        #return redirect( url_for('login' ) ) #, username=username) )
+
+@app.route('/login/', methods=["GET", "POST"])
+def login():
+    """
+    The login function handles the user login process. It supports both GET and POST requests.
+
+    If it receives a GET request: It renders the login.html template.
+
+    If it receives a POST request: It retrieves the username and password from the form. It then checks the database 
+    for the user and verifies the password. If the login is successful, it creates a new user session and redirects to 
+    the profile view page. If the login fails, it displays an error message and redirects to the login page.
+
+    Returns: The login.html template if the request method is GET, or redirects to the profile view page after successful login.
+
+    """
+    if request.method == "GET":
+        return render_template ("login.html", page_title="Log In")
+    
+    else: 
+        username = request.form.get('username')
+        passwd = request.form.get('password')
+        conn = dbi.connect()
+        curs = dbi.dict_cursor(conn)
+        curs.execute('''SELECT user_id,user_name,hashed_password
+                        FROM login
+                        WHERE user_name = %s''',
+                    [username])
+        row = curs.fetchone()
+        if row is None:
+            # Same response as wrong password,
+            # so no information about what went wrong
+            flash('login incorrect. Try again or join')
+            return redirect( url_for('login'))
+        
+        stored = row['hashed_password']
+        print('database has stored: {} {}'.format(stored,type(stored)))
+        print('form supplied passwd: {} {}'.format(passwd,type(passwd)))
+        hashed2 = bcrypt.hashpw(passwd.encode('utf-8'),
+                                stored.encode('utf-8'))
+        hashed2_str = hashed2.decode('utf-8')
+        print('rehash is: {} {}'.format(hashed2_str,type(hashed2_str)))
+        if hashed2_str == stored:
+            print('they match!')
+            flash('successfully logged in as '+username)
+            session['username'] = username
+            session['user_id'] = row['user_id']
+            session['logged_in'] = True
+            session['visits'] = 1
+            return redirect( url_for('viewProfile' ) ) #, username=username) )
+        else:
+            flash('password incorrect. Try again or join')
+            return redirect( url_for('join'))
+    
+@app.route('/logout/')
+def logout():
+    """
+    The logout function handles the user logout process. It supports GET requests.
+
+    If it receives a GET request: It checks if the user is logged in. If the user is logged in, 
+    it clears the user session and displays a success message. If the user is not logged in, it 
+    displays an error message.
+
+    Returns: A redirect to the index page after processing the logout.
+    """ 
+    if 'username' in session:
+        username = session['username']
+        session.pop('username')
+        session.pop('user_id')
+        session.pop('logged_in')
+        flash('You are logged out')
+        return redirect(url_for('index'))
+    else:
+        #flash('you are not logged in. Please login or join')
+        return redirect( url_for('index') )
+    
+====================== messages.py =====================
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+#Messaging feature related backend code
+
+from flask import (Flask, render_template, make_response, url_for, request,
+                   redirect, flash, session, send_from_directory, jsonify)
+from werkzeug.utils import secure_filename
+from __main__ import app
+import datetime
+import homepage
+import queries as q
+
+import cs304dbi as dbi
+
+# Helper functions for messaging feature
+def getChatsFrom(conn, id):
+    """
+    This function retrieves messages sent by the given user id.
+    Input: Connection, user id
+
+    It connects to the database, executes a query to select all messages that the 
+    given user ID has sent, and returns the fetched result.
+
+    Returns: A list of dictionaries containing the fetched messages.
+
+    """
+    conn = q.getConnection()
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select `to` as recipient, message_text as message,
+                 message_time as time from message where `from` = %s ''', [id])
+    return curs.fetchall()
+
+def getChatsTo(conn, id):
+    """
+    This function retrieves messages sent to the given user id.
+    Input: Connection, user id
+
+    It connects to the database, executes a query to select all messages that was 
+    sent to the given user ID, and returns the fetched result.
+
+    Returns: A list of dictionaries containing fetched messages.
+
+    """
+    conn = q.getConnection()
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select `from` as sender, message_text as message,
+                 message_time as time from message where `to` = %s ''', [id])
+    return curs.fetchall()
+
+def getChatsbetween(conn, rec_id, send_id):
+    """
+    This function retrieves messages exchanged between the given user ids.
+    Input: Connection, user id, user id
+
+    It connects to the database, executes a query to select all messages that the 
+    given user IDs have sent each other, and returns the fetched result.
+
+    Returns: A list of dictionaries containing all the fetched messages.
+
+    """
+    conn = q.getConnection()
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select `from` as sender, `to` as recipient, 
+                message_text as message, message_time as time from message 
+                where `to`= %s and `from` = %s or `to`= %s and `from` = %s
+                order by message_time asc''',
+                 [rec_id, send_id, send_id, rec_id])
+    return curs.fetchall()
+
+def addMessage(conn, rec_id, sender_id, message):
+    """
+    This function adds a given message between the given ids to the message table.
+    Input: Connection, recipient's user id, sender's uder id, message text
+
+    It connects to the database, executes a query to 
+    insert the given messageto the message table.
+
+    Returns: None.
+    """
+    # Insert into database or further processing
+    conn = q.getConnection()
+    curs = dbi.cursor(conn)
+    timestamp = datetime.datetime.now()
+    sql = '''insert into message(`from`, `to`, message_text, message_time)
+        values(%s, %s, %s, %s)'''
+    curs.execute(sql, [sender_id, rec_id, message, timestamp])
+    conn.commit()
+
+        
+@app.route('/chat/<rec_id>', methods =["POST", "GET"])
+def sendMessage(rec_id):
+    """
+    This function handles sending messages.
+    Input: recipient user id
+    It renders the message page for GET requests. For POST requests, it retrieves the message from the form, 
+    gets the senders user ID from the session, records the current timestamp, inserts the message details into the database, 
+    and displays a confirmation message.
+
+    Returns: For GET requests: Renders the messages.html template with the page title “Message” and the recipients user ID.
+    For POST requests: Inserts the message into the database and renders the messages.html template with a confirmation message.
+    """
+    if 'user_id' in session:
+        user_id = session.get('user_id')
+        conn = q.getConnection()
+        allmessages = getChatsbetween(conn, rec_id, user_id)
+        if len(allmessages) != 0:
+            for message in allmessages:
+                sender_id = message['sender']
+                recipient_id = message['recipient']
+                sender_name = homepage.getUserDetails(conn, sender_id)['name']
+                rec_name = homepage.getUserDetails(conn, recipient_id)['name']
+                message['sender_name'] = sender_name
+                message['recipient_name'] = rec_name
+        else:
+            sender_id = user_id
+            rec_name = homepage.getUserDetails(conn, rec_id)['name']
+            sender_name = homepage.getUserDetails(conn, sender_id)['name']
+        if request.method == "GET":        
+            from_name= homepage.getUserDetails(conn, user_id)['name']  
+            to_name =  homepage.getUserDetails(conn, rec_id)['name']     
+            return render_template('messages.html', 
+                                page_title = "Individual Chats",
+                                messages = allmessages,
+                                to_name = to_name,
+                                from_name = from_name,
+                                recipient_id = rec_id,
+                                current_user_id = user_id )
+        else:
+           sender_id = user_id
+           message = request.form.get('message')
+           addMessage(conn, rec_id, sender_id, message)           
+           flash("Message sent!")
+           return redirect(url_for('sendMessage', rec_id=rec_id))
+    else:
+        flash("You should be logged in!")
+        return redirect(url_for('login'))
+
+###################################################################################################################
+
+====================== profile.py =====================
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+
+from flask import (Flask, render_template, make_response, url_for, request,
+                   redirect, flash, session, send_from_directory, jsonify)
+from werkzeug.utils import secure_filename
+from __main__ import app
+
+from werkzeug.utils import secure_filename
+import cs304dbi as dbi
+import os
+import homepage
+import login
+import queries as q
+
+"""
+This function looks up a profile picture based on it's file id and returns a webpage with the profile picture associated with that id.
+
+Input: file id
+
+It executes a query that gets a given file name based on a file id. It then gets the picture associated with the given filename.
+
+Return: A specifi profile picture
+"""
+@app.route('/prof_pic/<file_id>')
+def profpic(file_id):
+    conn = q.getConnection()
+
+    row = q.getFile(conn, file_id)
+    if row == 0:
+        flash('No picture for {}'.format(file_id))
+        return redirect(url_for('index'))
+    
+    return send_from_directory(app.config['UPLOADS'],row['profile_pic_filename'])
+
+
+"""
+The viewProfile function handles the display of the users profile. 
+It supports both GET and POST requests. Users must be logged in to access this functionality.
+
+If it receives a GET or POST request: It retrieves the users information and profile picture from the database. 
+If the user is found, it renders the viewProfile.html template with the users data and profile picture. 
+If the user is not found, it displays an error message and redirects to the index page.
+
+Returns: the viewProfile.html template with the users data and profile picture if the user 
+is logged in, or redirects to the login page with an error message if the user is not logged in.
+"""
+@app.route('/profile/', methods=["GET", "POST"])
+def viewProfile():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to view the profile.")
+        return redirect(url_for('login'))
+
+    conn = q.getConnection()
+    #curs = dbi.dict_cursor(conn)
+    
+    # Fetch user information
+    user = q.getUserInfo(conn, user_id) #curs.fetchone()
+    
+
+    # Fetch profile picture
+    profile_pic_data = q.getProfpic(conn, user_id) #curs.fetchone()
+
+    if user:
+        if profile_pic_data:
+            profile_pic_filename = profile_pic_data['profile_pic_filename']
+            profile_pic = url_for('profpic', file_id=profile_pic_data['file_id'])
+        else:
+            profile_pic = None
+        
+        # Render the profile page after gathering the data
+        return render_template('viewProfile.html', user=user, profile_pic=profile_pic)
+    else:
+        flash("User not found.")
+        return redirect(url_for('index'))
+
+
+
+"""
+The upload_profile_pic function handles the uploading of a user’s profile picture. 
+It supports POST requests. Users must be logged in to access this functionality.
+
+If it receives a POST request: It checks if the user is logged in. If not, it 
+displays an error message and redirects to the view profile page. If the user is logged in, 
+it checks if the user already has a profile picture. It then processes the uploaded file, saves it 
+to the uploads directory, and updates or inserts the profile picture record in the database. If the 
+upload is successful, it displays a success message and redirects to the view profile page. If an error occurs, 
+it displays an error message and redirects to the view profile page.
+
+Returns: a redirect to the view profile page after processing the upload.
+"""
+@app.route('/upload-profile-pic/', methods=["POST"])
+def upload_profile_pic():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to upload a profile picture.")
+        return redirect(url_for('viewProfile'))
+
+    conn = q.getConnection()
+    #curs = dbi.cursor(conn)
+
+    # Check if the user already has a profile picture
+    #curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    existing_file = q.getProfpic(conn, user_id) #curs.fetchone()
+
+    if 'file' not in request.files:
+        flash("No file part.")
+        return redirect(url_for('viewProfile'))
+
+    f = request.files['file']
+    if f.filename == '':
+        flash("No selected file.")
+        return redirect(url_for('viewProfile'))
+
+    filename = secure_filename(f.filename)
+    file_path = os.path.join(app.config['UPLOADS'], filename)
+    f.save(file_path)
+
+    try:
+        if existing_file:
+            # Update existing profile picture
+            #curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
+            q.updateProfPic(conn, filename, user_id)
+        else:
+            # Insert new profile picture record
+            #curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+            q.insertProfPic(conn, filename, user_id)
+
+        conn.commit()  # Commit changes to the database
+        flash("Profile picture uploaded successfully!")
+    except Exception as e:
+        flash(f"An error occurred while saving the file: {e}")
+        return redirect(url_for('viewProfile'))
+
+    return redirect(url_for('viewProfile'))
+
+"""
+The delete_profile_pic function handles the deletion of a users profile picture. 
+It supports POST requests. Users must be logged in to access this functionality.
+
+If it receives a POST request: It checks if the user is logged in. If not, it displays 
+an error message and redirects to the view profile page. If the user is logged in, it 
+fetches the profile picture filename from the database and deletes the file from the file system. 
+It then removes the file record from the database. If the deletion is successful, it displays a success 
+message and redirects to the view profile page. If an error occurs, it displays an error message and rolls back the transaction.
+
+Returns: a redirect to the view profile page after processing the deletion.
+"""
+@app.route('/delete-profile-pic/', methods=["POST"])
+def delete_profile_pic():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to delete your profile picture.")
+        return redirect(url_for('viewProfile'))
+
+    conn = q.getConnection()
+    #curs = dbi.cursor(conn)
+
+    try:
+        # Fetch and delete the file from the file system
+        #curs.execute('SELECT profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+        profile_pic_file = q.getProfpic(conn, user_id) #curs.fetchone()
+
+        if profile_pic_file:
+            filename = profile_pic_file[0]  # Accessing the filename by index
+            file_path = os.path.join(app.config['UPLOADS'], filename)
+
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+            # Remove the file record from the database
+            #curs.execute('DELETE FROM file WHERE user_id = %s', [user_id])
+            #conn.commit()  # Commit after deleting the file record
+            q.deleteProfPic(conn, user_id)
+            flash("Profile picture deleted successfully.")
+        else:
+            flash("No profile picture to delete.")
+    except Exception as e:
+        flash(f"An error occurred while deleting the profile picture: {e}")
+        conn.rollback()  # Rollback in case of an error
+
+    return redirect(url_for('viewProfile'))
+
+"""
+The delete_account function handles the deletion of a users account. It supports POST requests. 
+Users must be logged in to access this functionality.
+
+If it receives a POST request: It checks if the user is logged in. If not, it displays an error 
+message and redirects to the login page. If the user is logged in, it calls the delete_profile_pic function 
+to remove the users profile picture. It then deletes the users account and login records from the database, 
+commits the changes, and clears the users session. If the deletion is successful, it displays a success message 
+and redirects to the join page. If an error occurs, it displays an error message and redirects to the view profile page.
+
+Returns: a redirect to the join page after processing the deletion, or to the view profile page if an error occurs.
+"""
+@app.route('/delete_account/', methods=['POST'])
+def delete_account():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to delete your account.")
+        return redirect(url_for('login'))
+
+    conn = q.getConnection()
+    #curs = dbi.cursor(conn)
+
+    confirm_delete = request.form.get('confirm_delete')
+    if confirm_delete == "yes":
+        try:
+            # Call delete_profile_pic to remove the profile picture
+            #delete_profile_pic()
+
+            # Delete the user's account record from the database
+            #curs.execute('DELETE FROM user WHERE user_id = %s', [user_id])
+            #curs.execute('DELETE FROM login WHERE user_id = %s', [user_id])
+            #conn.commit()
+            q.deleteAccount(conn, user_id)
+
+            # Clear the user's session
+            session.clear()
+
+            flash("Account and profile picture deleted successfully.")
+            return redirect(url_for('join'))
+        except Exception as e:
+            flash(f"Error deleting account: {e}")
+            return redirect(url_for('viewProfile'))
+    else:
+        return "Deletion not confirmed.", 400
+
+"""
+The editProfile function handles the editing of a user’s profile. It supports both GET and POST requests. 
+Users must be logged in to access this functionality.
+
+If it receives a GET request: It retrieves the user’s current profile information from the database and renders 
+the editProfile.html template with the user’s data.
+
+If it receives a POST request: It updates the user’s profile information in the database with the new data 
+provided in the form and redirects to the view profile page with a success message.
+
+Returns: the editProfile.html template with the user’s data if the user is logged in, or redirects to the 
+login page with an error message if the user is not logged in.
+
+"""
+@app.route('/update-profile/', methods=["GET", "POST"])
+def updateProfile():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to edit the profile.")
+        return redirect(url_for('login'))
+
+    if request.method == "POST":
+        new_name = request.form.get('name')
+        new_gender = request.form.get('gender')
+        new_age = request.form.get('age')
+        new_profession = request.form.get('profession')
+        new_location = request.form.get('location')
+        new_desc = request.form.get('profile_desc')
+        new_pets = request.form.get('pets')
+        new_hobbies = request.form.get('hobbies')
+        new_seeking = request.form.get('seeking')
+
+        # Validate inputs
+        errors = []
+        
+        # Validate age (must be a number)
+        try:
+            new_age = int(new_age)
+        except ValueError:
+            errors.append("Age must be a number.")
+
+        # Validate gender (check if it's one of the allowed values)
+        if new_gender not in ['man', 'woman', 'nonbinary']:
+            errors.append("Gender must be 'Man', 'Woman', or 'Nonbinary'.")
+
+        # Check if name, age, and location are empty or just spaces
+        if not new_name.strip():  # Checks if name is just spaces
+            errors.append("Name cannot be empty or just spaces.")
+        if not new_location.strip():  # Checks if location is just spaces
+            errors.append("Location cannot be empty or just spaces.")
+
+        # Check if profession, profile description, and hobbies are just spaces (but allow empty)
+        if new_profession and not new_profession.strip():  # if profession is not empty but only contains spaces
+            errors.append("Profession cannot be just spaces.")
+        if new_desc and not new_desc.strip():  # if profile description is not empty but only contains spaces
+            errors.append("Profile description cannot be just spaces.")
+        if new_hobbies and not new_hobbies.strip():  # if hobbies is not empty but only contains spaces
+            errors.append("Hobbies cannot be just spaces.")
+        
+        if errors:
+            for error in errors:
+                flash(error)
+            return redirect(url_for('viewProfile'))
+
+        conn = q.getConnection()
+        curs = dbi.cursor(conn)
+
+        try:
+            #curs.execute('UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s',
+             #            [new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id])
+            #conn.commit()
+            q.updateProfile(conn, new_name, new_gender, new_age, new_profession, new_location, new_desc, new_pets, new_hobbies, new_seeking, user_id)
+            flash("Profile updated successfully!")
+            return redirect(url_for('viewProfile'))
+        except Exception as e:
+            flash(f"Error updating profile: {e}")
+    
+    # Show the form to edit
+    conn = q.getConnection()
+    #curs = dbi.dict_cursor(conn)
+    #curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    user = q.getUserInfo(conn, user_id) #curs.fetchone()
+
+    return render_template('editProfile.html', user=user)
+
+@app.route('/edit-profile/', methods=["GET", "POST"])
+def editProfile():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must log in to edit the profile.")
+        return redirect(url_for('login'))
+
+    conn = q.getConnection()
+    #curs = dbi.dict_cursor(conn)
+
+    if request.method == "POST":
+        # Retrieve form values
+        form_data = {
+            "name": request.form.get("name"),
+            "gender": request.form.get("gender"),
+            "age": request.form.get("age"),
+            "profession": request.form.get("profession"),
+            "location": request.form.get("location"),
+            "profile_desc": request.form.get("profile_desc"),
+            "pets": request.form.get("pets"),
+            "hobbies": request.form.get("hobbies"),
+            "seeking": request.form.get("seeking"),
+        }
+
+        # Validate input types
+        errors = []
+
+        # Validate age (should be an integer)
+        try:
+            form_data["age"] = int(form_data["age"])
+        except ValueError:
+            errors.append("Age must be a number.")
+
+        # Validate gender (should be 'Man', 'Woman', or 'Nonbinary')
+        if form_data["gender"] not in ['man', 'woman', 'nonbinary']:
+            errors.append("Gender must be 'Man', 'Woman', or 'Nonbinary'.")
+        
+        # Check if name, age, and location are empty or just spaces
+        if not form_data["name"].strip():  # Checks if name is just spaces
+            errors.append("Name cannot be empty or just spaces.")
+        if not form_data["location"].strip():  # Checks if location is just spaces
+            errors.append("Location cannot be empty or just spaces.")
+
+        # Check if profession, profile description, and hobbies are just spaces (but allow empty)
+        if form_data["profession"] and not form_data["profession"].strip():  # if profession is not empty but only contains spaces
+            errors.append("Profession cannot be just spaces.")
+        if form_data["profile_desc"] and not form_data["profile_desc"].strip():  # if profile description is not empty but only contains spaces
+            errors.append("Profile description cannot be just spaces.")
+        if form_data["hobbies"] and not form_data["hobbies"].strip():  # if hobbies is not empty but only contains spaces
+            errors.append("Hobbies cannot be just spaces.")
+
+        # # Check if name or profession is empty
+        # if not form_data["name"] or not form_data["profession"]:
+        #     errors.append("Name and profession must not be empty.")
+
+        if errors:
+            for error in errors:
+                flash(error)
+            return redirect(url_for('editProfile'))
+
+    try:
+        # Update all fields at once
+        """ curs.execute('''
+            UPDATE user 
+            SET name = %s, gender = %s, age = %s, profession = %s, location = %s, 
+                profile_desc = %s, pets = %s, hobbies = %s, seeking = %s 
+            WHERE user_id = %s
+        ''', [
+            form_data["name"], form_data["gender"], form_data["age"], 
+            form_data["profession"], form_data["location"], form_data["profile_desc"], 
+            form_data["pets"], form_data["hobbies"], form_data["seeking"], 
+            user_id
+        ]) """
+
+        q.updateProfile(conn, form_data["name"], form_data["gender"], form_data["age"], 
+            form_data["profession"], form_data["location"], form_data["profile_desc"], 
+            form_data["pets"], form_data["hobbies"], form_data["seeking"], 
+            user_id)
+        
+        #conn.commit()
+        flash("Profile updated successfully!")
+        return redirect(url_for('viewProfile'))
+    except Exception as e:
+        flash(f"Error updating profile: {e}")
+        conn.rollback()
+
+    # Fetch current user data for GET request
+    #curs.execute('SELECT name, gender, age, profession, location, profile_desc, pets, hobbies, seeking FROM user WHERE user_id = %s', [user_id])
+    user = q.getUserInfo(conn, user_id) #curs.fetchone()
+    
+    return render_template('editProfile.html', user=user)
+====================== queries.py =====================
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+#Database related functions
+
+from flask import (render_template, make_response, url_for, request,
+                   redirect, flash, session, send_from_directory, jsonify)
+from werkzeug.utils import secure_filename
+from __main__ import app
+
+from werkzeug.utils import secure_filename
+import cs304dbi as dbi
+import os
+import homepage
+import login
+
+def getConnection():
+    """
+    The getConnection function establishes a connection to the database.
+
+    Returns: A database connection object.
+    """
+    return dbi.connect()
+
+###### Profile queries
+
+
+def getFile(conn, file_id):
+    """
+    The getFile function retrieves the profile picture filename associated with a given file ID.
+
+    Input: 
+        conn: A database connection object.
+        file_id: The ID of the file to retrieve.
+
+    Returns: 
+        The profile picture filename associated with the provided file_id.
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''select profile_pic_filename from file where file_id = %s''',
+        [file_id])
+    numrows = curs.fetchone()
+    return numrows
+
+
+def getUserInfo(conn, user_id):
+    """
+    The getUserInfo function retrieves user information for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        user_id: The ID of the user to retrieve information for.
+
+    Returns: A dictionary containing user information such as user_id, name, gender, age, 
+    profession, profile description, location, pets, hobbies, and seeking status.
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''SELECT user_id, name, gender, age, profession, profile_desc, location, pets, 
+                 hobbies, seeking FROM user WHERE user_id = %s''', [user_id])
+    user = curs.fetchone()
+    return user
+
+
+def getProfpic(conn, user_id):
+    """
+    The getProfpic function retrieves the profile picture data for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        user_id: The ID of the user to retrieve the profile picture for.
+
+    Returns: A dictionary containing the file ID and profile picture filename associated with the user.
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('SELECT file_id, profile_pic_filename FROM file WHERE user_id = %s', [user_id])
+    profile_pic_data = curs.fetchone()
+    return profile_pic_data
+
+
+def updateProfPic(conn, filename, user_id):
+    """
+    The updateProfPic function updates the profile picture filename for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        filename: The new profile picture filename.
+        user_id: The ID of the user to update the profile picture for.
+    """
+    curs = dbi.cursor(conn)
+    curs.execute('UPDATE file SET profile_pic_filename = %s WHERE user_id = %s', [filename, user_id])
+    conn.commit()
+
+
+def insertProfPic(conn, filename, user_id):
+    """
+    The insertProfPic function inserts a new profile picture filename for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        filename: The profile picture filename to insert.
+        user_id: The ID of the user to insert the profile picture for.
+    """
+    curs = dbi.cursor(conn)
+    curs.execute('INSERT INTO file (user_id, profile_pic_filename) VALUES (%s, %s)', [user_id, filename])
+    conn.commit()
+
+
+def deleteProfPic(conn, user_id):
+    """
+    The deleteProfPic function deletes the profile picture record for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        user_id: The ID of the user to delete the profile picture for.
+    """
+    curs = dbi.cursor(conn)
+    curs.execute('DELETE FROM file WHERE user_id = %s', [user_id])
+    conn.commit()  # Commit after deleting the file record
+
+
+def deleteAccount(conn, user_id):
+    """
+    The deleteAccount function deletes the user account and associated profile picture for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        user_id: The ID of the user to delete the account for.
+
+    """
+    deleteProfPic(conn, user_id)
+    curs = dbi.cursor(conn)
+    curs.execute('DELETE FROM user WHERE user_id = %s', [user_id])
+    curs.execute('DELETE FROM login WHERE user_id = %s', [user_id])
+    conn.commit()
+
+
+def updateProfile(conn, new_name, new_gender, new_age, new_profession, new_location, 
+                  new_desc, new_pets, new_hobbies, new_seeking, user_id):
+    """
+    The updateProfile function updates the user profile information for a given user ID.
+
+    Input: 
+        conn: A database connection object.
+        new_name: The new name of the user.
+        new_gender: The new gender of the user.
+        new_age: The new age of the user.
+        new_profession: The new profession of the user.
+        new_location: The new location of the user.
+        new_desc: The new profile description of the user.
+        new_pets: The new pets information of the user.
+        new_hobbies: The new hobbies of the user.
+        new_seeking: The new seeking status of the user.
+        user_id: The ID of the user to update the profile for.
+    """
+    curs = dbi.cursor(conn)
+    curs.execute('''UPDATE user SET name = %s, gender = %s, age = %s, profession = %s, location = %s, 
+                 profile_desc = %s, pets = %s, hobbies = %s, seeking = %s WHERE user_id = %s''',
+                         [new_name, new_gender, new_age, new_profession, new_location, new_desc, 
+                          new_pets, new_hobbies, new_seeking, user_id])
+    conn.commit()
+
+"""
+The peopleMessaging function takes in a connection and a userid and returns a list of people the person
+with the uid is messaging
+
+
+Input: conn, uid
+Return: allPeopleList which is a list of tuples containing a name and a user id of a person who has either sent
+or received messages from the person with the given uid
+"""
+def peopleMessaging(conn, uid):
+    curs = dbi.cursor(conn)
+    curs.execute('''select message.to, user.name FROM message inner
+                 join user on (message.to = user.user_id) where message.from = %s''', [uid])
+    toList = curs.fetchall()
+    curs.execute('''select message.from, user.name FROM message inner
+                 join user on (message.from = user.user_id) where message.to = %s''', [uid])
+    fromList = curs.fetchall()
+    allPeopleList = []
+    for name in toList:
+        if name not in allPeopleList:
+            allPeopleList.append(name)
+    for name in fromList:
+        if name not in allPeopleList:
+            allPeopleList.append(name)
+    return allPeopleList
+
+====================== *.sql =====================
+
+====================== templates/base.html =====================
+<!--Roomie Match Project by Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga-->
+<!--Base template for final project. Sets up nav bar at the top with options of Home, Profile, Posts, and Chat-->
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <!-- for mobile-friendly pages -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page_title }}</title>
+    <link rel='stylesheet' href="{{url_for('static', filename = 'style.css')}}">
+    {% block head_stuff %} {% endblock %}
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div id="messages">
+  {% for msg in messages %}
+  <p>{{msg}}</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+            
+{% block nav %}
+
+<nav class="navbar">
+  <ul>
+    <li><a href="{{url_for('index')}}">Home</a></li>
+    <li><a href="{{url_for('viewProfile')}}">Profile</a></li>
+    <li><a href="{{url_for('viewPosts')}}">Posts</a></li>
+    <li><a href="{{url_for('makePosts')}}">Make a Post</a></li>
+    <li><a href="{{url_for('viewChat')}}">Chat</a></li>
+  </ul>
+</nav>
+{% endblock %}
+
+{% block main_content %}
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}
+
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  {% block end_scripts %}
+  {% endblock %}
+  
+</body>
+</html>
+====================== templates/chat.html =====================
+{% extends "base.html" %}
+{% block main_content %}
+<h1>Chat feature coming soon! </h1>
+{% endblock %}
+====================== templates/chatlist.html =====================
+<!-- Authors: Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga -->
+{% extends "base.html" %}
+{% block main_content %}
+<h1>All Chats</h1>
+
+{%if allPeople%}
+    {% for person in allPeople %}
+
+
+    <div class="peopleMessaging">
+        <a href="{{ url_for('sendMessage', rec_id=person[0]) }}">
+            <button>{{person[1]}}</button>
+        </a>
+
+    </div>
+    {% endfor %}
+{%endif%}
+{% endblock %}
+
+====================== templates/createAccount.html =====================
+
+====================== templates/editProfile.html =====================
+{% extends "base.html" %}
+{% block main_content %}
+    <h1>Welcome, {{ username }}</h1>
+
+    <h1>Edit Profile</h1>
+
+    <!-- Consolidated form for all profile fields -->
+    <form action="{{ url_for('editProfile') }}" method="post">
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="{{ user.name }}">
+        </div><br>
+
+        <div>
+            <label for="gender">Gender:</label>
+            <select name="gender" id="gender">
+                <option value="man" {% if user.gender == 'man' %}selected{% endif %}>Man</option>
+                <option value="woman" {% if user.gender == 'woman' %}selected{% endif %}>Woman</option>
+                <option value="nonbinary" {% if user.gender == 'nonbinary' %}selected{% endif %}>Nonbinary</option>
+            </select>
+        </div><br>
+
+        <div>
+            <label for="age">Age:</label>
+            <input type="text" name="age" id="age" value="{{ user.age }}">
+        </div><br>
+
+        <div>
+            <label for="profession">Profession:</label>
+            <input type="text" name="profession" id="profession" value="{{ user.profession }}">
+        </div><br>
+
+        <div>
+            <label for="location">Location:</label>
+            <input type="text" name="location" id="location" value="{{ user.location }}">
+        </div><br>
+
+        <div>
+            <label for="profile_desc">Profile Description:</label>
+            <textarea name="profile_desc" id="profile_desc" rows="4" cols="50">{{ user.profile_desc }}</textarea>
+        </div><br>
+
+        <div>
+            <label for="pets">Pets:</label>
+            <select name="pets" id="pets">
+                <option value="yes" {% if user.pets == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if user.pets == 'no' %}selected{% endif %}>No</option>
+            </select>
+        </div><br>
+
+        <div>
+            <label for="hobbies">Hobbies:</label>
+            <input type="text" name="hobbies" id="hobbies" value="{{ user.hobbies }}">
+        </div><br>
+
+        <label for="pets">Seeking:</label>
+        <select name="seeking" id="seeking">
+            <option value="housing" {% if user.seeking == 'housing' %}selected{% endif %}>Housing</option>
+            <option value="roommate" {% if user.seeking == 'roommate' %}selected{% endif %}>Roommate</option>
+        </select>
+
+        <!-- Save Changes button for all fields -->
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('delete_account') }}">
+        <label>
+            <input type="checkbox" name="confirm_delete" value="yes" required>
+            I understand that this action cannot be undone.
+        </label>
+        <br>
+        <button type="submit">Delete Account</button>
+    </form>
+    
+{% endblock %}
+
+====================== templates/feed.html =====================
+<!-- Authors: Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga -->
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Roomie-match</h1>
+<form method="post" action="{{url_for('viewPosts')}}"> 
+    <p style="text-align: center;"> <label for="filter"> Filter by housing needs: </label>
+        <select id="filter" name="filter">
+            <option value = "">select</option>
+            <option value = "both">both</option>
+            {% for option in options %}
+                <option value="{{option.housing_option}}"> {{option.housing_option}}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="filter">
+    </p>
+</form>
+{% for post in allPosts %}
+
+<div class="post" >
+    
+        <p> {{post.name}} is looking for {{post.post_type}}! </p>
+        <p class="desc">Post Description: {{post.post_desc or "No description"}}. </p>
+        <ul>
+            <li>Location: {{post.location}}</li>
+            <li>Monthly Rent: ${{post.budget}}</li>
+            <li>Maximum Number of Roommates Needed: {{post.max_roommates}}</li>
+            <li>Shared Bathroom: {{post.shared_bathroom}}</li>
+            <li>Shared Bedroom: {{post.shared_bedroom}}</li>
+            <li>Pets Friendly: {{post.ok_with_pets}}</li>
+            <li>Picture of the room:</li> 
+            <img class="pics" src="{{url_for('roompic',file_id=post.file_id)}}" alt="">
+        </ul>
+        <p style="font-size: x-small;"> Posted <i>{{post.time_diff}} day(s) ago</i> </p>
+
+        {% if post.user_id != current_user_id %}
+        <form method="get" action="{{url_for('sendMessage',rec_id=post.user_id)}}">
+        <p><input type="submit" id="submit" value="Message {{post.name}}"> </p>
+        <p><input type="hidden" name="recipient" id="submit" value="Message {{post.user_id}}"> </p>
+        </form>
+        {% endif %}
+
+        {% if post.user_id == current_user_id %}
+        <form action="{{url_for('delete_post',post_id=post.post_id)}}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+
+        {% if post.user_id == current_user_id %}
+        <form action="{{url_for('updatePost',post_id=post.post_id)}}" method="GET">
+            <button type="submit" class="btn btn-danger">Edit</button>
+        </form>
+        {% endif %}
+</div>
+{% endfor %}
+{% endblock %}
+====================== templates/home.html =====================
+<!--Roomie Match team: Anjali Karki, Flora Mukako, Indira Ruslanova, Ali Bichanga-->
+<!--Home page with nav bar-->
+
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Home</h1>
+<h2> Welcome to Roomie Match! Where you connect with roommates and find your place! </h2>
+{%if not logged_in%}
+<div class="loginSignup">
+    <div class="login">
+        <p>New user? Sign up below!</p>
+        <h2 id="signupButton" class="loginButtons"><a href="{{url_for('join')}}">Sign Up</a></h2>
+    </div>
+    <div class="login">
+        <p id="loginButton">Already a user? Login below!</p>
+        <h2 id="loginButton" class="loginButtons"><a href="{{url_for('login')}}">Log In</a></h2>
+    </div>
+</div>
+{%endif%}
+{% endblock %}
+====================== templates/login.html =====================
+{% extends "base.html" %}
+
+{# replaces default content block #}
+{% block content %}
+<div class="form">
+    <form id="login-form"
+        method="post"
+        action="/login">
+
+    <p><label>Email:
+        <input required type="text" name="username" size="50" placeholder="Please enter @wellesley.edu email"></label></p>
+
+    <p><label>Password:
+        <input required type="password" name="password" size="50" placeholder=""></textarea>
+    </label></p>
+
+
+    <p><input type="submit" value="Login">
+
+    </form>
+</div>
+<h2 id="signupButton" class="loginButtons"><a href="{{url_for('join')}}">Sign Up</a></h2>
+
+
+{% endblock %}
+====================== templates/makePosts.html =====================
+<!-- Authors: Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga -->
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>{{page_title}}</h1>
+<div class="newPostForm">
+
+  <form method="POST" action="{{url_for('updatePost', post_id=post.post_id) if post else url_for('makePosts')}}" enctype="multipart/form-data">
+    
+    <p>
+        <label for="post_type"> What are you looking for: 
+            <select id="post_type" name ="post_type" required>
+                <option value="">select</option>
+                <option value="roommate" {% if post and post.post_type == 'roommate' %}selected{% endif %}>roommates(Looking for roommates to join your housing)</option>
+                <option value="housing" {% if post and post.post_type == 'housing' %}selected{% endif %}>housing</option> 
+        </label></select> 
+    </p>
+    
+    <p>
+        <label for="housing_type"> Housing type: 
+            <select id="housing_type" name ="housing_type" required>
+                <option value="">select</option>
+                <option value="long-term-post-grad" {% if post and post.housing_type == 'long-term-post-grad' %}selected{% endif %}>
+                    long-term post grad</option>
+                <option value="summer" {% if post and post.housing_type == 'summer' %}selected{% endif %}>
+                    summer</option>
+                <option value="winter" {% if post and post.housing_type == 'winter' %}selected{% endif %}>
+                    winter</option>
+                <option value="short-term" {% if post and post.housing_type == 'short-term' %}selected{% endif %}>
+                    short-term</option> 
+            </select> 
+        </label>
+    </p>
+    
+    <p>
+        <label for="location"> What is your preferred location? 
+            <input required type="location" name="location" id= "location" value="{{ post.location if post else '' }}" 
+            placeholder="Example: Boston"> 
+        </label> 
+    </p>
+    
+    <p>
+        <label for="budget"> How much is the monthly rent or your monthly budget?
+            <input required type="budget" name="budget" id= "budget" value="{{ post.budget if post else '' }}" 
+            placeholder="Example: 1500"> 
+        </label> 
+    </p>
+    
+    <p>
+        <label for="max_roommates"> What is the maximum number of Roommates you are willing to live with?
+            <input required type="max_roomates" name="max_roommates" id= "max_roommates" 
+            value="{{ post.max_roommates if post else '' }}" 
+            placeholder="Example: 0"> 
+        </label> 
+    </p>
+    
+    <label for="descr">Give a brief description of what you are looking for: <br>
+        <textarea id= "descr" name="descr" rows="3" cols="30" required 
+        placeholder="Example: I am looking for a roommate to join me in a studio apartment in Brooklyn">
+        {{ post.post_desc if post else '' }}
+        </textarea>
+    </label>
+    
+    <br>
+    
+    <p>
+        <label for="shared_bathroom">  Would you be okay with, or are you offering, a space with a shared bathroom?
+            <select id="shared_bathroom" name ="shared_bathroom" required>
+                <option value="">select</option>
+                <option value="yes" {% if post and post.shared_bathroom == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if post and post.shared_bathroom == 'no' %}selected{% endif %}>No</option>
+            </select>
+        </label>
+    </p>
+    
+    <p>
+        <label for="shared_bedroom"> Would you be okay with, or are you offering, a space with a shared bedroom?
+            <select id="shared_bedroom" name ="shared_bedroom" required>
+                <option value="">select</option>
+                <option value="yes" {% if post and post.shared_bedroom == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if post and post.shared_bedroom == 'no' %}selected{% endif %}>No</option>
+            </select>
+        </label>
+    </p>
+    
+    <p>
+        <label for="ok_with_pets"> Would you be okay living in a pet-friendly space?
+            <select id="ok_with_pets" name ="ok_with_pets" required>
+                <option value="">select</option>
+                <option value="yes" {% if post and post.ok_with_pets == 'yes' %}selected{% endif %}>Yes</option>
+                <option value="no" {% if post and post.ok_with_pets == 'no' %}selected{% endif %}>No</option> 
+            </select>
+        </label> 
+    </p>
+
+    <p>If you already have housing and looking for roommates,
+    upload pictures of your appartment/house or <br>
+    If you are seeking a room, upload what your ideal room looks like:</p>
+    <p>
+        <label>Pic: 
+            <input type="file" name="pic" {% if not post %}required{% endif %}>
+        </label>
+    </p>
+  
+    <p>
+        <input type="submit" id="submit" value="{{'Update Post' if post else 'Create Post' }}"> 
+    </p>
+
+</form>
+</div>
+{% endblock %}
+====================== templates/messages.html =====================
+<!-- Authors: Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga -->
+{% extends "base.html" %}
+
+{% block content %}
+<!--Individual chats-->
+<h2>Messages between {{from_name}} <span id="current_user_id">{{current_user_id}}</span> and {{to_name}} <span id="recipient_id">{{recipient_id}}</span></h2>
+
+{% for items in messages %}
+    <div class="message {% if items.sender == current_user_id %}sent{% else %}received{% endif %}">
+        <p><strong>Message from {{items.sender_name}}: </strong>{{ items.message }}</p>
+        {{items.time}}
+    </div>
+{% endfor %}
+
+<div class="form">
+    <form id="messages-form" method="post" action="{{url_for('sendMessage', rec_id = recipient_id)}}">
+        <p><label>Message: 
+            <input required type="text" name="message" size="100"></label></p>
+        <p><input name="send" type="submit" value="Send Message"></p>
+    </form>
+</div>
+
+<h2 id="loginButton" class="loginButtons"><a href="{{ url_for('viewPosts') }}">Back</a></h2>
+{% endblock %}
+====================== templates/sign-up.html =====================
+{% extends "base.html" %}
+{# replaces default content block #}
+{% block content %}
+<div class="form">
+    <form id="sign-up-form"
+        method="post"
+        action="/sign-up"> 
+
+    <p><label>Email:
+        <input required type="text" name="user-name" size="50" placeholder="Please enter @wellesley.edu email"></label></p>
+
+    <p><label>Password:
+        <input required type="password" name="password1" size="50" placeholder="Please use letters, digits & special characters"></textarea>
+    </label></p>
+
+    <p><label>Re-type Password:
+        <input required type="password" name="password2" size="50" placeholder="Retype your password"></textarea>
+    </label></p>
+
+    <p><input type="submit" value="Sign Up"></p>
+
+    </form>
+</div>
+<h2 id="loginButton" class="loginButtons"><a href="{{url_for('login')}}">Log In</a></h2>
+
+{% endblock %}
+====================== templates/successfulPost.html =====================
+{% extends "base.html" %}
+
+{ % block main_content % }
+<p>Post made successfully! Thank you</p>
+<a href="{{url_for('makePosts')}}">Make another post</a></li>
+
+{% endblock %}
+====================== templates/viewPosts.html =====================
+{% extends "base.html" %}
+====================== templates/viewProfile.html =====================
+{% extends "base.html" %}
+
+{% block main_content %}
+
+<h1>{{ page_title }}</h1>
+<!-- Logout Button -->
+<div>
+    <a href="{{ url_for('logout') }}">
+        <button id="logoutButton">Logout</button>
+    </a>
+</div>
+<!-- Display Profile Picture -->
+<div>
+    {% if profile_pic %}
+        <img src="{{ profile_pic }}" alt="Profile Picture" width="100" height="100">
+    {% else %}
+        <p>No profile picture uploaded.</p>
+    {% endif %}
+</div>
+
+<!-- Profile Information Section -->
+<h2>Profile Information</h2>
+<div>
+    <p><strong>Name:</strong> {{ user.name }}</p>
+    <p><strong>Gender:</strong> {{ user.gender }}</p>
+    <p><strong>Age:</strong> {{ user.age }}</p>
+    <p><strong>Profession:</strong> {{ user.profession }}</p>
+    <p><strong>Location:</strong> {{ user.location }}</p>
+    <p><strong>Profile Description:</strong> {{ user.profile_desc }}</p>
+    <p><strong>Pets:</strong> {{ user.pets }}</p>
+    <p><strong>Hobbies:</strong> {{ user.hobbies }}</p>
+    <p><strong>Seeking:</strong> {{ user.seeking }}</p>
+</div>
+
+<!-- Change Profile Picture Section -->
+<h2>Change Profile Picture</h2>
+<form action="{{ url_for('upload_profile_pic') }}" method="POST" enctype="multipart/form-data">
+    <!-- Ensure the file input field is named 'file' as expected in the Flask route -->
+    <label> Choose file: <input type="file" name="file" accept="image/*"></label>
+    <button type="submit">Upload Profile Picture</button>
+</form>
+
+<!-- Flash Messages Section -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+<!-- Edit Buttons for Each Section -->
+<div>
+    <a href="{{ url_for('updateProfile', uid=user.user_id) }}">
+        <button>Edit Profile</button>
+    </a>
+</div>
+
+{% endblock %}
+====================== static/*.js =====================
+
+====================== static/style.css =====================
+
+/* 
+Authors: Flora Mukako, Anjali Karki, Indira Ruslanova, Ali Bichanga
+CSS styling code for RoomieMatch 
+*/
+
+/* the --color-header and others are CSS variables, which we access later. 
+*/
+
+HTML {
+    --color-header: #007ea9;  /* color for H1-H6 and others. was deepskyblue but poor contrast. */
+    --color-hilite: #b50000;  /* was red, but this avoids WAVE contrast errors */ 
+    --color-focus: #56B929;
+    --font-family: Verdana;
+    font-family: var(--font-family)
+}
+
+/* For flashed messages; make them stand out using red and italics */
+#messages {
+    color: var(--color-hilite);
+    font-style: italic;
+}
+
+h1 {
+    font-size: 200%;
+    color: var(--color-header);
+    padding: 10px;
+}
+
+h2, h3 {
+    color: var(--color-header);
+    padding: 10px;
+}  
+/* nav{
+    
+} */
+
+/* for a simple navbar. */
+nav > ul {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+    
+}
+
+nav > ul > li {
+    flex: 0 0 auto;
+    width: 20em; 
+}
+
+nav button, nav a {
+    display: block;
+    box-sizing: border-box; /* easier to make button and A the same size */
+    width: 100%;
+    height: 40px;
+    padding: 0px;
+    padding-bottom: 5px;
+    background-color: var(--color-header); /* was #3498db */
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+    /* Firefox uses font -apple-system unless I repeat the font spec here. */
+    font-family: var(--font-family);
+    font-weight: bold;
+    font-size: 1rem;
+    text-decoration: None;
+}
+
+/* Only the top-level buttons are centered; lower ones are left-aligned. */
+nav > ul > li > button , nav > ul > li > a {
+    text-align: center;
+    color: white;
+}
+
+/* because of the margin trick, this can only be used for the last element */
+
+nav li.right {
+    margin-left: auto;
+}
+
+nav button:hover, button:focus, nav a:hover, nav a:focus {
+    background-color: var(--color-focus);
+}
+
+.dropdown{
+        background-color: white;
+        padding:0.9em;
+        color: black;
+        visibility: visible;
+}
+
+.loginButtons, .peopleMessaging a button, #logoutButton{
+    display: inline-block;
+    padding: 8px 20px;
+    margin: 10px;
+    font-size: 20px;
+    background-color: #007ea9;
+    border: 2px solid #000;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+}
+
+.loginButtons a{
+    color: white
+}
+
+.loginSignup{
+    display: inline-flex;
+    align-items: center;
+}
+.login{
+    padding: 20px;
+}
+#loginButton, #signupButton{
+    margin-left: 30px;
+}
+
+.form{
+    padding: 5px;
+    margin-left: 30px;
+}
+
+.newPostFom{
+    text-align: center;
+}
+
+input[type=button], input[type=submit] {
+    background-color: #007ea9;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-family: var(--font-family);
+    margin: 4px 2px;
+    font-family: var(--font-family);
+    font-size: 1rem;
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+/* Centering posts */
+.post {
+    margin: 20px auto; /* Adds vertical spacing and centers the element */
+    padding: 20px;
+    width: 60%; /* Adjust to control the width of each post */
+    background-color: #ffffff; /* Optional: White background for contrast */
+    border: 1px solid #ddd; /* Optional: Border for visual clarity */
+    border-radius: 10px; /* Optional: Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Subtle shadow for depth */
+}
+
+.newPostFom{
+    text-align: center;
+}
+
+input[type=button], input[type=submit] {
+    background-color: #007ea9;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-family: var(--font-family);
+    margin: 4px 2px;
+    font-family: var(--font-family);
+    font-size: 1rem;
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .pics {
+    display: block; /* Centers the image as a block element */
+    margin: 10px auto; /* Centers the image horizontally */
+    max-width: 100%; /* Prevents the image from overflowing the container */
+    height: auto; /* Maintains the aspect ratio */
+    max-height: 300px; /* Limits the height for very large images */
+    object-fit: cover; /* Ensures the image fits nicely in the bounding box */
+    border-radius: 5px; /* Optional: Adds rounded corners */
+    border: 1px solid #ccc; /* Optional: Adds a border */
+}
+
+.desc{
+font-weight: bold;
+}
+
+/* ######################################################################################################## */
+.message {
+    margin: 10px 0;
+    padding: 0px 10px;
+    border-radius: 20px;
+    max-width: 60%;
+    font-family: Verdana, sans-serif;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+}
+
+/* Sent messages */
+.message.sent {
+    background-color: #0096FF; /* Blue background */
+    align-self: flex-end;  /* Align to the right */
+    text-align: right;
+    margin-left: auto;
+    border: 1px solid #87c687;
+    color: white;
+}
+
+/* Received messages */
+.message.received {
+    background-color: white; /* White background */
+    align-self: flex-start;  /* Align to the left */
+    text-align: left;
+    margin-right: auto;
+    border: 1px solid #cccccc;
+    color: black;
+}
+
+#messages-form p label input{
+    width:50%;
+    padding: 10px;
+}
+
+#messages-form p label {
+    font-size: 20px;
+    font-family: Verdana, sans-serif;
+}
+  
+
+h2 #current_user_id {
+    display: none;
+}
+h2 #recipient_id {
+    display: none;
+}
+
+.peopleMessaging { 
+    display: flex; 
+    flex-direction: column;     
+}
+
+
+
+
+
+
+
+
+
+

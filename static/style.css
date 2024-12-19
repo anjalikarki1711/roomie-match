@@ -1,3 +1,9 @@
+
+/* 
+Authors: Flora Mukako, Anjali Karki, Indira Ruslanova, Ali Bichanga
+CSS styling code for RoomieMatch 
+*/
+
 /* the --color-header and others are CSS variables, which we access later. 
 */
 
@@ -25,11 +31,16 @@ h2, h3 {
     color: var(--color-header);
     padding: 10px;
 }  
+/* nav{
+    
+} */
 
 /* for a simple navbar. */
 nav > ul {
     display: flex;
     flex-direction: row;
+    justify-content: center;
+
 }
 
 nav ul {
@@ -85,28 +96,22 @@ nav button:hover, button:focus, nav a:hover, nav a:focus {
         visibility: visible;
 }
 
-.loginButtons{
+.loginButtons, .peopleMessaging a button, #logoutButton{
     display: inline-block;
-    padding: 5px 20px;
-    font-size: 18px;
+    padding: 8px 20px;
+    margin: 10px;
+    font-size: 20px;
     background-color: #007ea9;
     border: 2px solid #000;
     border-radius: 5px;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
 }
-#logoutButton{
-    display: inline-block;
-    padding: 5px 20px;
-    font-size: 18px;
-    background-color: #007ea9;
-    border: 2px solid #000;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-}
+
 .loginButtons a{
     color: white
 }
@@ -195,10 +200,11 @@ font-weight: bold;
     padding: 0px 10px;
     border-radius: 20px;
     max-width: 60%;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
+    font-family: Verdana, sans-serif;
+    font-size: 18px;
     display: flex;
     flex-direction: column;
+    width: fit-content;
 }
 
 /* Sent messages */
@@ -220,6 +226,34 @@ font-weight: bold;
     border: 1px solid #cccccc;
     color: black;
 }
+
+#messages-form p label input{
+    width:50%;
+    padding: 10px;
+}
+
+#messages-form p label {
+    font-size: 20px;
+    font-family: Verdana, sans-serif;
+}
+  
+
+h2 #current_user_id {
+    display: none;
+}
+h2 #recipient_id {
+    display: none;
+}
+
+.peopleMessaging { 
+    display: flex; 
+    flex-direction: column;     
+}
+
+
+
+
+
 
 
 

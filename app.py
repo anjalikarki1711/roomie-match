@@ -6,16 +6,15 @@ from werkzeug.utils import secure_filename
 import cs304dbi as dbi
 import sys, os
 app = Flask(__name__)
-import homepage as homepage
-import login as login
+import homepage 
+import login 
 import datetime
-import profile as profile
+import profile
 import secrets
-import messages as messages
+import messages 
+import queries as q
 
-
-
-#for file upload
+# For file upload
 app.config['UPLOADS'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 20*1024*1024 # 20 MB
 # Directory for profile picture uploads
@@ -32,10 +31,15 @@ def index():
     This route directs users to the homepage where they can choose to either login or sign up to this app
     Returns: the template home.html
     """
+    if 'user_id' in session:
+        logged_in = True
+    else:
+        logged_in = False
     return render_template('home.html',
-                           page_title='Home Page')
-
-
+                           page_title='Home Page',
+                           logged_in=logged_in)
+############################################################################################################################
+#POST related functions
 @app.route('/makePost/', methods=["GET", "POST"])
 def makePosts():
     """
@@ -58,7 +62,6 @@ def makePosts():
                             page_title='Make a Post')
         else: 
             
-
             #retrieves form data 
             p_type = request.form.get('post_type')
             h_type = request.form.get('housing_type')
@@ -107,8 +110,6 @@ def makePosts():
             else:
                 flash('Budget and max_number of roomates should be integers')
         
-
-
 @app.route('/roompic/<file_id>')
 def roompic(file_id):
     """
@@ -159,7 +160,8 @@ def viewPosts():
         h_options = homepage.getHousingOptions(conn)
         h_need = homepage.getHousingNeed(conn, uid)
         need = h_need["housing_need"]
-        flash('FYI, Since you are looking for {}, your default feedpage shows posts offering {}! You can use our filter page to look through all posts'.format(need, need))
+        flash('''FYI, Since you are looking for {}, your default feedpage shows posts 
+              offering {}! You can use our filter dropdown to look through all posts'''.format(need, need))
         if need == 'housing':
             posts= homepage.filterPostDetails(conn, 'roommate')
         else:        
@@ -335,25 +337,45 @@ def updatePost(post_id):
     return redirect(url_for('viewPosts'))
     
 #######################################################################################################################
+#CHAT related functions
 
-# @app.route('/chat/', methods=["GET", "POST"])
+@app.route('/chatlist/')
+def chatList():
+    """
+    The chatlist function handles the `/chatlist/` route and generates
+    a list of people available for messaging. 
+    
+    Retrieves: the current user's ID from the session, 
+    fetches relevant data from the database
+
+    Returns: a render of the `chatlist.html` template with the list of people.
+    """
+    user_id = session['user_id']
+    conn = q.getConnection()
+    allMessaging = q.peopleMessaging(conn, user_id)
+    if len(allMessaging)==0:
+        flash("No messages yet!")
+    return(render_template('chatlist.html', allPeople = allMessaging))
+
+
+@app.route('/chat/', methods=["GET"])
 def viewChat():
     """
-    The viewChat function handles the display of the chat history. It supports both GET and POST requests. 
+    The viewChat function handles the display of the chat history. It supports both GET and POST requests.
     Users must be logged in to access this functionality.
 
-    If it receives a GET request: It renders the chat.html template.
+
+    If it receives a GET request: It renders the chatlist.html template.
+
 
     If it receives a POST request: It performs the same action as a GET request.
 
-    Returns: the chat.html template if the user is logged in, or redirects to the index page 
+
+    Returns: the chatlist.html template if the user is logged in, or redirects to the index page
     with an error message if the user is not logged in.
     """
-    '''Shows the user's chat history and people - yet to be implemented'''
-    #'''Shows the user's chat history and people - yet to be implemented''')
     if 'user_id' in session:
-        return render_template('chat.html',
-                           page_title='Chat History')
+        return redirect(url_for('chatList'))
     else:
         flash('You must be logged in to use the Chat feature!')
         return redirect(url_for('index'))

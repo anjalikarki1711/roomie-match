@@ -1,3 +1,5 @@
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -18,7 +20,8 @@ def join():
     If the passwords match, it hashes the password and stores the user information in the database. 
     It then creates a new user session and redirects to the profile view page.
 
-    Returns: The sign-up.html template if the request method is GET, or redirects to the profile view page after successful registration.
+    Returns: The sign-up.html template if the request method is GET, or redirects to the profile view 
+    page after successful registration.
     """
     if request.method == "GET":
         return render_template ("sign-up.html", page_title="Sign Up")
@@ -33,7 +36,6 @@ def join():
             flash('Please use your Wellesley email!')
             return redirect( url_for('join'))
 
-        
         hashed = bcrypt.hashpw(passwd1.encode('utf-8'),
                             bcrypt.gensalt())
         stored = hashed.decode('utf-8')
@@ -68,7 +70,6 @@ def join():
         session['visits'] = 1
         return redirect( url_for('viewProfile' ) ) #, username=username) )
         #return redirect( url_for('login' ) ) #, username=username) )
-
 
 @app.route('/login/', methods=["GET", "POST"])
 def login():
@@ -128,7 +129,8 @@ def logout():
     The logout function handles the user logout process. It supports GET requests.
 
     If it receives a GET request: It checks if the user is logged in. If the user is logged in, 
-    it clears the user session and displays a success message. If the user is not logged in, it displays an error message.
+    it clears the user session and displays a success message. If the user is not logged in, it 
+    displays an error message.
 
     Returns: A redirect to the index page after processing the logout.
     """ 

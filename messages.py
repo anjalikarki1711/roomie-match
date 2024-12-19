@@ -1,3 +1,6 @@
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+#Messaging feature related backend code
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -8,7 +11,7 @@ import queries as q
 
 import cs304dbi as dbi
 
-#Helper functions for messaging feature
+# Helper functions for messaging feature
 def getChatsFrom(conn, id):
     """
     This function retrieves messages sent by the given user id.
@@ -73,7 +76,7 @@ def addMessage(conn, rec_id, sender_id, message):
 
     Returns: None.
     """
-     # Insert into database or further processing
+    # Insert into database or further processing
     conn = q.getConnection()
     curs = dbi.cursor(conn)
     timestamp = datetime.datetime.now()
@@ -110,43 +113,25 @@ def sendMessage(rec_id):
         else:
             sender_id = user_id
             rec_name = homepage.getUserDetails(conn, rec_id)['name']
-            sender_name = homepage.getUserDetails(conn, user_id)['name']
-        if request.method == "GET":                
+            sender_name = homepage.getUserDetails(conn, sender_id)['name']
+        if request.method == "GET":        
+            from_name= homepage.getUserDetails(conn, user_id)['name']  
+            to_name =  homepage.getUserDetails(conn, rec_id)['name']     
             return render_template('messages.html', 
                                 page_title = "Individual Chats",
                                 messages = allmessages,
-                                to_name = rec_name,
-                                from_name = sender_name,
+                                to_name = to_name,
+                                from_name = from_name,
                                 recipient_id = rec_id,
                                 current_user_id = user_id )
         else:
+           sender_id = user_id
            message = request.form.get('message')
-           addMessage(conn, rec_id, sender_id, message)
+           addMessage(conn, rec_id, sender_id, message)           
            flash("Message sent!")
            return redirect(url_for('sendMessage', rec_id=rec_id))
     else:
         flash("You should be logged in!")
         return redirect(url_for('login'))
-        
-@app.route('/chat/', methods=["GET", "POST"])
-def viewChat():
-    """
-    The viewChat function handles the display of the chat history. It supports both GET and POST requests. 
-    Users must be logged in to access this functionality.
-
-    If it receives a GET request: It renders the chat.html template.
-
-    If it receives a POST request: It performs the same action as a GET request.
-
-    Returns: the chat.html template if the user is logged in, or redirects to the index page 
-    with an error message if the user is not logged in.
-    """
-    if 'user_id' in session:
-        flash('Chat coming soon')
-        # return render_template('chat.html',
-        #                    page_title='Chat History')
-    else:
-        flash('You must be logged in to use the Chat feature!')
-        return redirect(url_for('index'))
 
 ###################################################################################################################

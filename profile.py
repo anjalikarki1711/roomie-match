@@ -1,3 +1,5 @@
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -6,9 +8,8 @@ from __main__ import app
 from werkzeug.utils import secure_filename
 import cs304dbi as dbi
 import os
-import homepage as homepage
-import login as login
-from flask import g
+import homepage
+import login
 import queries as q
 
 """

@@ -1,3 +1,6 @@
+#Authors: Anjali Karki, Flora Mukako, Ali Bichanga, Indira Ruslanova
+#Database related functions
+
 from flask import (render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
@@ -6,9 +9,8 @@ from __main__ import app
 from werkzeug.utils import secure_filename
 import cs304dbi as dbi
 import os
-import homepage as homepage
-import login as login
-
+import homepage
+import login
 
 def getConnection():
     """
@@ -155,3 +157,29 @@ def updateProfile(conn, new_name, new_gender, new_age, new_profession, new_locat
                          [new_name, new_gender, new_age, new_profession, new_location, new_desc, 
                           new_pets, new_hobbies, new_seeking, user_id])
     conn.commit()
+
+"""
+The peopleMessaging function takes in a connection and a userid and returns a list of people the person
+with the uid is messaging
+
+
+Input: conn, uid
+Return: allPeopleList which is a list of tuples containing a name and a user id of a person who has either sent
+or received messages from the person with the given uid
+"""
+def peopleMessaging(conn, uid):
+    curs = dbi.cursor(conn)
+    curs.execute('''select message.to, user.name FROM message inner
+                 join user on (message.to = user.user_id) where message.from = %s''', [uid])
+    toList = curs.fetchall()
+    curs.execute('''select message.from, user.name FROM message inner
+                 join user on (message.from = user.user_id) where message.to = %s''', [uid])
+    fromList = curs.fetchall()
+    allPeopleList = []
+    for name in toList:
+        if name not in allPeopleList:
+            allPeopleList.append(name)
+    for name in fromList:
+        if name not in allPeopleList:
+            allPeopleList.append(name)
+    return allPeopleList

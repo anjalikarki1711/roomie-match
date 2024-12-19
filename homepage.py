@@ -1,3 +1,5 @@
+##Authors: Anjali Karki, Ali Bichanga, Flora Mukako, Indira Ruslanova
+
 # # Roomie-match Homepage flask code 
 
 # Database related functions for homepage

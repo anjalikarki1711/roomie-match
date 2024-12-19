@@ -1,0 +1,18 @@
+<!-- Authors: Anjali Karki, Indira Ruslanova, Flora Mukako, Ali Bichanga -->
+{% extends "base.html" %}
+{% block main_content %}
+<h1>All Chats</h1>
+
+{%if allPeople%}
+    {% for person in allPeople %}
+
+
+    <div class="peopleMessaging">
+        <a href="{{ url_for('sendMessage', rec_id=person[0]) }}">
+            <button>{{person[1]}}</button>
+        </a>
+
+    </div>
+    {% endfor %}
+{%endif%}
+{% endblock %}
